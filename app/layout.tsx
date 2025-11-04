@@ -4,6 +4,7 @@ import Footer from "@/components/Footer/Footer";
 import TanStackProvider from "@/components/TanStackProvider/TanStackProvider";
 import { Roboto } from "next/font/google";
 import { Metadata } from "next";
+import AuthProvider from "@/components/AuthProvider/AuthProvider";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -37,12 +38,14 @@ export default function RootLayout({ children, modal }: { children: React.ReactN
       <body className={roboto.variable}>
         <div id="modal-root"></div>
         <TanStackProvider>
+          <AuthProvider> 
           <Header />
           <main>
             {children}
             {modal}
           </main>
           <Footer />
+           </AuthProvider>
         </TanStackProvider>
       </body>
     </html>
