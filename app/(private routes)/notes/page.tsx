@@ -1,8 +1,9 @@
 // app/notes/page.tsx
 import { QueryClient, dehydrate, HydrationBoundary } from "@tanstack/react-query";
-import { fetchNotes } from "@/lib/api";
-import NotesClient from "@/app/notes/filter/[...slug]/Notes.client";
+
+import NotesClient from "@/app/(private routes)/notes/filter/[...slug]/Notes.client";
 import type { Metadata } from "next";
+import { fetchNotes } from "@/lib/api/serverApi";
 
 export const metadata: Metadata = {
   title: "All Notes | NoteHub",

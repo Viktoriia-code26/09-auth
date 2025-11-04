@@ -1,10 +1,10 @@
 
 "use client";
 
+import { fetchNoteById } from "@/lib/api/clientApi";
 import css from "../NoteDetails.page.module.css"
 import { useQuery } from "@tanstack/react-query";
 import { useRouter } from 'next/navigation';
-import { fetchNoteById } from "@/lib/api";
 
 interface Props {
   noteId: string;
