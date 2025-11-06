@@ -3,7 +3,8 @@ import axios from "axios";
 import { cookies } from "next/headers";
 import { Note } from "@/types/note";
 import { User } from "@/types/user";
-import {api} from "./api"
+import { api } from "./api"
+import { getCookie, setCookie } from "cookies-next";
 
 const baseURL = process.env.NEXT_PUBLIC_API_URL + "/api";
 
@@ -55,42 +56,43 @@ export const fetchNoteById = async (id: string) => {
 };
 
 // --- Auth --- //
-export const getMe = async () => {
+export const getServerMe = async () => {
   const serverApi = await getServerApi();
   const { data } = await serverApi.get<User>("/users/me");
   return data;
 };
 
-interface CheckSessionResponse {
-  success?: boolean;
-  user?: {
-    id: string;
-    email: string;
-    name?: string;
-  };
-}
+// interface CheckSessionResponse {
+//   success?: boolean;
+//   user?: {
+//     id: string;
+//     email: string;
+//     name?: string;
+//   };
+// }
 
-// 🔹 Оновлення сесії (для middleware)
-export async function checkSession() {
+// (для middleware)
+export const checkSession = async () => {
+  const refreshToken = getCookie("refreshToken");
+  if (!refreshToken) return null;
+
   try {
-    const cookieStore = await cookies();
+    const res = await api.post("/auth/session", { refreshToken }, { withCredentials: true });
+    const setCookieHeader = res.headers["set-cookie"];
+    if (setCookieHeader) {
+      const cookiesArray = Array.isArray(setCookieHeader) ? setCookieHeader : [setCookieHeader];
+      cookiesArray.forEach((cookieStr) => {
+        const [nameValue] = cookieStr.split(";"); 
+        const [name, value] = nameValue.split("=");
+        if (name && value) {
+          setCookie(name.trim(), value.trim(), { path: "/", httpOnly: false });
+        }
+      });
+    }
 
-    const cookieHeader = cookieStore
-      .getAll()
-      .map((c) => `${c.name}=${c.value}`)
-      .join("; ");
-
-    const res = await api.get<CheckSessionResponse>("/auth/session", {
-      headers: { Cookie: cookieHeader },
-    });
-
-    // 👇 вот тут меняем тип
-    return {
-      data: res.data,
-      headers: res.headers as Record<string, string | string[]>,
-    };
+    return res.data;
   } catch (err) {
-    console.error("checkSession error:", err);
-    return { data: null, headers: {} as Record<string, string | string[]> };
+    console.error("Session refresh failed:", err);
+    return null;
   }
-}
+};

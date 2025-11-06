@@ -12,7 +12,7 @@ import NoteList from "@/components/NoteList/NoteList";
 import Pagination from "@/components/Pagination/Pagination";
 import Loader from "@/components/Loader/Loader";
 import ErrorMessage from "@/components/ErrorMessage/ErrorMessage";
-import { fetchNotes } from "@/lib/api/serverApi";
+import { fetchNotes } from "@/lib/api/clientApi";
 
 
 interface NotesClientProps {
