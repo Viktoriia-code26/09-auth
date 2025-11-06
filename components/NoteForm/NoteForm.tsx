@@ -2,11 +2,11 @@
 
 import { useState } from "react";
 import type { NoteTag } from "../../types/note";
-import { createNote } from "../../lib/api";
 import { useNoteDraftStore } from "@/lib/store/noteStore";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import css from "./NoteForm.module.css";
 import { useRouter } from "next/navigation";
+import { createNote } from "@/lib/api/clientApi";
 
 const allTags: NoteTag[] = ["Todo", "Work", "Personal", "Meeting", "Shopping"];
 

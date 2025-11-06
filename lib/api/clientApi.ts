@@ -1,28 +1,10 @@
+// lib/api/clientApi.ts
+import { api } from "./api";
 import { User } from "@/types/user";
-import { nextServer } from "./api"
-import { NewNoteData, Note } from "@/types/note";
+import { Note, NewNoteData } from "@/types/note";
 
-export interface ApiNoteResponse {
-  content: string;
-  title: string;
-  notes: Note[];
-  totalPages: number;
-  totalResults?: number;
-}
-export type UpdateUserRequest = {
-  userName?: string;
-  photoUrl?: string;
-};
-export type RegisterRequest = {
-  email: string;
-  password: string;
-  userName: string;
-};
-
-const token = process.env.NEXT_PUBLIC_NOTEHUB_TOKEN
-const BASE_URL = process.env.NEXT_PUBLIC_NOTEHUB_TOKEN + '/api';
-
-export async function fetchNotes({
+// --- Notes --- //
+export const fetchNotes = async ({
   query = "",
   tag,
   currentPage = 1,
@@ -32,91 +14,66 @@ export async function fetchNotes({
   tag?: string;
   currentPage?: number;
   perPage?: number;
-}): Promise<ApiNoteResponse> {
-  const response = await nextServer.get<ApiNoteResponse>(BASE_URL, {
+}) => {
+  const { data } = await api.get<{ notes: Note[]; totalPages: number }>("/notes", {
     params: {
       search: query || undefined,
       tag: tag || undefined,
       page: currentPage,
       perPage,
     },
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Cache-Control": "no-cache",
-    },
   });
-  return response.data;
-}
-
-export async function createNote(newNoteData: NewNoteData): Promise<Note> {
-  const response = await nextServer.post<Note>(BASE_URL, newNoteData, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    },
-  });
-  return response.data;
-}
-
-export async function deleteNote(id: string): Promise<Note> {
-  const response = await nextServer.delete<Note>(`${BASE_URL}/${id}`, {
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-    },
-  });
-  return response.data;
-}
-
-export async function fetchNoteById(id: string): Promise<Note> {
-    const response = await nextServer.get<Note>(`${BASE_URL}/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
-    });
-    return response.data;
-}
-
-export const register = async (data: RegisterRequest) => {
-  const res = await nextServer.post<User>('/auth/register', data);
-  return res.data;
-};
-
-export type LoginRequest = {
-  email: string;
-  password: string;
-};
-
-export const login = async (data: LoginRequest) => {
-  const res = await nextServer.post<User>('/auth/login', data);
-  return res.data;
-};
-
-type CheckSessionRequest = {
-  success: boolean;
-};
-
-export const checkSession = async () => {
-  const res = await nextServer.get<CheckSessionRequest>('/auth/session');
-  return res.data.success;
-};
-export const getMe = async () => {
-  const { data } = await nextServer.get<User>('/auth/me');
   return data;
 };
 
-export const logout = async (): Promise<void> => {
-  await nextServer.post('/auth/logout')
+export const fetchNoteById = async (id: string) => {
+  const { data } = await api.get<Note>(`/notes/${id}`);
+  return data;
 };
-export const updateMe = async (payload: UpdateUserRequest) => {
-  const res = await nextServer.put<User>('/auth/me', payload);
+
+export const createNote = async (newNoteData: NewNoteData) => {
+  const { data } = await api.post<Note>("/notes", newNoteData);
+  return data;
+};
+
+export const deleteNote = async (id: string) => {
+  const { data } = await api.delete<Note>(`/notes/${id}`);
+  return data;
+};
+
+// --- Auth --- //
+export type RegisterRequest = { email: string; password: string };
+export const register = async (data: RegisterRequest) => {
+  console.log(data);
+  const res = await api.post<User>("/auth/register", data,
+  //   headers: {
+  //   "Content-Type": "application/json",
+  // },
+  )
   return res.data;
 };
-export const uploadImage = async (file: File): Promise<string> => {
-  const formData = new FormData();
-  formData.append('file', file);
-  const { data } = await nextServer.post('/upload', formData);
-  return data.url;
+
+export type LoginRequest = { email: string; password: string };
+export const login = async (data: LoginRequest) => {
+  const res = await api.post<User>("/auth/login", data);
+  return res.data;
+};
+
+export const logout = async () => {
+  await api.post("/auth/logout");
+};
+
+export const checkSession = async () => {
+  const res = await api.get<User | null>("/auth/session");
+  return res.data;
+};
+
+export const getMe = async () => {
+  const { data } = await api.get<User>("/users/me");
+  return data;
+};
+
+export const updateMe = async (payload: Partial<User>) => {
+  const { data } = await api.patch<User>("/users/me", payload);
+  return data;
 };

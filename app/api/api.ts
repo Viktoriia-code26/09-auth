@@ -1,6 +1,10 @@
-import axios from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
-export const api = axios.create({
-  baseURL: 'https://notehub-api.goit.study',
+const BASE_URL = 'https://notehub-api.goit.study';
+
+// Клиентский Axios (браузер)
+export const api: AxiosInstance = axios.create({
+  baseURL: BASE_URL,
   withCredentials: true,
 });
+

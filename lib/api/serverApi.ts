@@ -1,45 +1,31 @@
 // lib/api/serverApi.ts
+import axios from "axios";
+import { cookies } from "next/headers";
+import { Note } from "@/types/note";
+import { User } from "@/types/user";
+import {api} from "./api"
 
-import { User } from '@/types/user';
-import { Note } from '@/types/note';
-import { nextServer } from './api';
-import { cookies } from 'next/headers';
+const baseURL = process.env.NEXT_PUBLIC_API_URL + "/api";
 
-export const checkServerSession = async () => {
-  // Дістаємо поточні cookie
+// Функція для створення серверного інстансу з куками
+async function getServerApi() {
   const cookieStore = await cookies();
-  const res = await nextServer.get('/auth/session', {
+  const cookieHeader = cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
+
+  return axios.create({
+    baseURL,
+    withCredentials: true,
     headers: {
-      // передаємо кукі далі
-      Cookie: cookieStore.toString(),
+      Cookie: cookieHeader,
     },
   });
-  // Повертаємо повний респонс, щоб middleware мав доступ до нових cookie
-  return res;
-};
-export const getServerMe = async (): Promise<User> => {
-  const cookieStore = await cookies();
-  const { data } = await nextServer.get('/auth/me', {
-    headers: {
-      Cookie: cookieStore.toString(),
-    },
-  });
-  return data;
-};
-
-
-export interface ApiNoteResponse {
-  content: string;
-  title: string;
-  notes: Note[];
-  totalPages: number;
-  totalResults?: number;
 }
 
-const token = process.env.NEXT_PUBLIC_NOTEHUB_TOKEN
-const BASE_URL = process.env.NEXT_PUBLIC_NOTEHUB_TOKEN + '/api';
-
-export async function fetchNotes({
+// --- Notes --- //
+export const fetchNotes = async ({
   query = "",
   tag,
   currentPage = 1,
@@ -49,31 +35,62 @@ export async function fetchNotes({
   tag?: string;
   currentPage?: number;
   perPage?: number;
-}): Promise<ApiNoteResponse> {
-  const response = await nextServer.get<ApiNoteResponse>(BASE_URL, {
+}) => {
+  const serverApi = await getServerApi();
+  const { data } = await serverApi.get<{ notes: Note[]; totalPages: number }>("/notes", {
     params: {
       search: query || undefined,
       tag: tag || undefined,
       page: currentPage,
       perPage,
     },
-    headers: {
-      Authorization: `Bearer ${token}`,
-      Accept: "application/json",
-      "Cache-Control": "no-cache",
-    },
   });
-  return response.data;
+  return data;
+};
+
+export const fetchNoteById = async (id: string) => {
+  const serverApi = await getServerApi();
+  const { data } = await serverApi.get<Note>(`/notes/${id}`);
+  return data;
+};
+
+// --- Auth --- //
+export const getMe = async () => {
+  const serverApi = await getServerApi();
+  const { data } = await serverApi.get<User>("/users/me");
+  return data;
+};
+
+interface CheckSessionResponse {
+  success?: boolean;
+  user?: {
+    id: string;
+    email: string;
+    name?: string;
+  };
 }
 
+// 🔹 Оновлення сесії (для middleware)
+export async function checkSession() {
+  try {
+    const cookieStore = await cookies();
 
-export async function fetchNoteById(id: string): Promise<Note> {
-    const response = await nextServer.get<Note>(`${BASE_URL}/${id}`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-        Accept: "application/json",
-      },
+    const cookieHeader = cookieStore
+      .getAll()
+      .map((c) => `${c.name}=${c.value}`)
+      .join("; ");
+
+    const res = await api.get<CheckSessionResponse>("/auth/session", {
+      headers: { Cookie: cookieHeader },
     });
-    return response.data;
 
+    // 👇 вот тут меняем тип
+    return {
+      data: res.data,
+      headers: res.headers as Record<string, string | string[]>,
+    };
+  } catch (err) {
+    console.error("checkSession error:", err);
+    return { data: null, headers: {} as Record<string, string | string[]> };
   }
+}

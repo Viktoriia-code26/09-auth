@@ -17,6 +17,7 @@ export default function PublicLayout({ children }: Props) {
   useEffect(() => {
     // refresh викличе перезавантаження даних
     router.refresh();
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(false);
   }, [router]);
 

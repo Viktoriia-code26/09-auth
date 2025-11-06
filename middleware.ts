@@ -1,7 +1,7 @@
+// middleware.ts
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
-import { parse } from "cookie";
-import { checkServerSession } from "./lib/api/serverApi";
+import { checkSession } from "./lib/api/serverApi";
 
 const privateRoutes = ["/profile", "/notes"];
 const publicRoutes = ["/sign-in", "/sign-up"];
@@ -14,50 +14,48 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute = publicRoutes.some((route) => pathname.startsWith(route));
   const isPrivateRoute = privateRoutes.some((route) => pathname.startsWith(route));
 
-  // 🔒 Если нет accessToken, но есть refreshToken — пробуем обновить сессию
+  // 🔒 Якщо є refreshToken, але нема accessToken → пробуємо оновити сесію
   if (!accessToken && refreshToken) {
-    const data = await checkServerSession();
-    const setCookie = data?.headers?.["set-cookie"];
-    const response = NextResponse.next();
+    try {
+      const res = await checkSession();
+      const setCookie = res?.headers?.["set-cookie"];
+      const response = NextResponse.next();
 
-    if (setCookie) {
-      const cookieArray = Array.isArray(setCookie) ? setCookie : [setCookie];
-      for (const cookieStr of cookieArray) {
-        const parsed = parse(cookieStr);
-        const options = {
-          expires: parsed.Expires ? new Date(parsed.Expires) : undefined,
-          path: parsed.Path,
-          maxAge: parsed["Max-Age"] ? Number(parsed["Max-Age"]) : undefined,
-        };
+      // Якщо бекенд повернув нові кукі
+      if (setCookie) {
+        const cookiesArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+        cookiesArray.forEach((cookieStr) => {
+          const [name, value] = cookieStr.split(";")[0].split("=");
+          if (name && value) {
+            response.cookies.set(name.trim(), value.trim());
+          }
+        });
 
-        if (parsed.accessToken)
-          response.cookies.set("accessToken", parsed.accessToken, options);
-        if (parsed.refreshToken)
-          response.cookies.set("refreshToken", parsed.refreshToken, options);
+        // Якщо користувач оновив сесію і йде на публічну сторінку → редірект
+        if (isPublicRoute) {
+          return NextResponse.redirect(new URL("/", request.url));
+        }
+
+        // Якщо користувач йде на приватну сторінку → пропускаємо
+        if (isPrivateRoute) {
+          return response;
+        }
       }
-
-      // Если обновили токен — направляем в зависимости от типа маршрута
-      if (isPublicRoute) {
-        return NextResponse.redirect(new URL("/", request.url));
-      }
-
-      if (isPrivateRoute) {
-        return response;
-      }
+    } catch (err) {
+      console.error("Session refresh failed:", err);
     }
   }
 
-  // 🚫 Нет accessToken и нет refreshToken → редирект неавторизованного пользователя
+  // 🚫 Немає жодного токена → редірект на Sign In
   if (!accessToken && !refreshToken && isPrivateRoute) {
     return NextResponse.redirect(new URL("/sign-in", request.url));
   }
 
-  // ✅ Авторизован, но пытается попасть на публичную страницу → редиректим
+  // ✅ Уже авторизований → не пускаємо на Sign In / Sign Up
   if (accessToken && isPublicRoute) {
     return NextResponse.redirect(new URL("/profile", request.url));
   }
 
-  // ✅ Иначе пропускаем запрос дальше
   return NextResponse.next();
 }
 

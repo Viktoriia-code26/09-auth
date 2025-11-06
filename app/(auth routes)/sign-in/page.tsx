@@ -9,13 +9,12 @@ import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import { login, LoginRequest } from '@/lib/api/clientApi';
 import { ApiError } from '@/lib/api/api';
-
+import css from "./SignInPage.module.css"
 
 
 const SignIn = () => {
   const router = useRouter();
   const [error, setError] = useState('');
-  // Отримуємо метод із стора
   const setUser = useAuthStore((state) => state.setUser)
   
   const handleSubmit = async (formData: FormData) => {
@@ -23,7 +22,6 @@ const SignIn = () => {
       const formValues = Object.fromEntries(formData) as LoginRequest;
       const res = await login(formValues);
       if (res) {
-	      // Записуємо користувача у глобальний стан
 	      setUser(res)
         router.push('/profile');
       } else {
@@ -39,18 +37,18 @@ const SignIn = () => {
   };
 
   return (
-    <form action={handleSubmit}>
-      <h1>Sign in</h1>
-      <label>
+    <form action={handleSubmit} className={css.form}>
+      <h1 className={css.formTitle}>Sign in</h1>
+      <label className={css.formGroup}>
         Email
-        <input type="email" name="email" required />
+        <input type="email" name="email" required className={css.input } />
       </label>
-      <label>
+      <label className={css.formGroup}>
         Password
-        <input type="password" name="password" required />
+        <input type="password" name="password" required className={css.input } />
       </label>
-      <button type="submit">Log in</button>
-      {error && <p>{error}</p>}
+      <button type="submit" className={css.submitButton}>Log in</button>
+      {error && <p className={css.error}>{error}</p>}
     </form>
   );
 };

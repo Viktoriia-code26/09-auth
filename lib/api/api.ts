@@ -1,10 +1,11 @@
-// lib/api.ts
+// lib/api/api.ts
+import axios, { AxiosError, AxiosInstance } from "axios";
 
-import axios, { AxiosError } from 'axios';
+const baseURL = process.env.NEXT_PUBLIC_API_URL + "/api";
 
-export const nextServer = axios.create({
-  baseURL: 'http://localhost:3000/api',
-  withCredentials: true, 
+export const api: AxiosInstance = axios.create({
+  baseURL,
+  withCredentials: true, // підтримка cookies
 });
 
-export type ApiError = AxiosError<{ error: string }>
+export type ApiError = AxiosError<{ error: string; message?: string }>;

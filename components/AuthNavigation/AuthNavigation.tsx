@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import { logout } from '@/lib/api/clientApi';
-
+import css from "./AuthNavigation.module.css"
 
 const AuthNavigation = () => {
   const router = useRouter();
@@ -29,17 +29,17 @@ const AuthNavigation = () => {
   // Якщо є сесія - відображаємо кнопку Logout та інформацію про користувача
   // інакше - лінки для авторизації
   return isAuthenticated ? (
-    <li>
-      <p>{user?.email}</p>
-      <button onClick={handleLogout}>Logout</button>
+    <li className={css.naigationItem}>
+      <p className={css.userEmail}>{user?.email}</p>
+      <button onClick={handleLogout} className={css.logoutButton}>Logout</button>
     </li>
   ) : (
     <>
       <li>
-        <Link href="/sign-in">Login</Link>
+        <Link href="/sign-in" className={css.navigationLink}>Login</Link>
       </li>
       <li>
-        <Link href="/sign-up">Sign up</Link>
+        <Link href="/sign-up" className={css.navigationLink}>Sign up</Link>
       </li>
     </>
   );

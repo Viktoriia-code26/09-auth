@@ -7,3 +7,7 @@ export type User = {
   createdAt: Date;
   updatedAt: Date;
 };
+export interface LoginPayload {
+  email: string;
+  password: string;
+}

@@ -7,8 +7,9 @@ import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore } from '@/lib/store/authStore';
 import { register, RegisterRequest } from '@/lib/api/clientApi';
-import { ApiError } from '@/lib/api/api';
 
+import css from "./SignUpPage.module.css"
+import { ApiError } from '@/lib/api/api';
 
 
 const SignUp = () => {
@@ -22,6 +23,12 @@ const SignUp = () => {
     try {
       const formValues = Object.fromEntries(formData) as RegisterRequest;
       const res = await register(formValues);
+
+      if (!/\S+@\.S+/.test(formValues.email)) {
+        setError("Please enter a valid email address");
+        return;
+      }
+
       if (res) {
 	      // Записуємо користувача у глобальний стан
 	      setUser(res)
@@ -40,25 +47,29 @@ const SignUp = () => {
 
 
   return (
-    <>
-      <h1>Sign up</h1>
-      <form action={handleSubmit}>
-        <label>
+    <div className={css.mainContent}>
+      <h1 className={css.formTitle}>Sign up</h1>
+      <form action={handleSubmit} className={css.form}>
+        <label className={css.formGroup}>
           Username
-          <input type="text" name="userName" required />
+          <input type="text" name="userName" className={css.input} required />
         </label>
-        <label>
+        <label className={css.formGroup}>
           Email
-          <input type="email" name="email" required />
+          <input
+            type="email"
+            name="email"
+            required
+            className={css.input} />
         </label>
-        <label>
+        <label className={css.formGroup}>
           Password
-          <input type="password" name="password" required />
+          <input type="password" name="password" required className={css.input } />
         </label>
-        <button type="submit">Register</button>
+        <button type="submit" className={css.submitButton}>Register</button>
       </form>
-      {error && <p>{error}</p>}
-    </>
+      {error && <p className={css.error}>{error}</p>}
+    </div>
   );
 };
 
