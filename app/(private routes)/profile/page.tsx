@@ -6,6 +6,20 @@ import { getServerMe } from "@/lib/api/serverApi";
 export default async function Profile() {
   const user = await getServerMe();
 
+  if (!user) {
+    return (
+      <main className={css.mainContent}>
+        <div className={css.profileCard}>
+          <h1 className={css.formTitle}>Profile Page</h1>
+          <p>Не удалось загрузить профиль. Пожалуйста, войдите снова.</p>
+          <Link href="/sign-in" className={css.editProfileButton}>
+            Sign In
+          </Link>
+        </div>
+      </main>
+    );
+  }
+
   return (
     <main className={css.mainContent}>
       <div className={css.profileCard}>
@@ -22,7 +36,7 @@ export default async function Profile() {
 
         <div className={css.avatarWrapper}>
           <Image
-            src={user.photoUrl || "/default-avatar.png"} 
+            src={user.photoUrl || "/default-avatar.png"}
             alt={user.userName || "User Avatar"}
             width={120}
             height={120}

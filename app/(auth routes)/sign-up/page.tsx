@@ -1,77 +1,74 @@
-// app/(public routes)/sign-up/page.tsx
+"use client";
+import { useState } from "react";
+import { register } from "@/lib/api/clientApi";
+import { useRouter } from "next/navigation";
+import css from "./SignUpPage.module.css";
 
-
-'use client';
-
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/lib/store/authStore';
-import { register, RegisterRequest } from '@/lib/api/clientApi';
-
-import css from "./SignUpPage.module.css"
-import { ApiError } from '@/lib/api/api';
-
-
-const SignUp = () => {
+export default function SignUpPage() {
   const router = useRouter();
-  const [error, setError] = useState('');
-  // Отримуємо метод із стора
-  const setUser = useAuthStore((state) => state.setUser)
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    userName: "",
+  });
+  const [error, setError] = useState("");
 
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setForm({ ...form, [e.target.name]: e.target.value });
+  };
 
-  const handleSubmit = async (formData: FormData) => {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
     try {
-      const formValues = Object.fromEntries(formData) as RegisterRequest;
-      const res = await register(formValues);
-
-      if (!/\S+@\.S+/.test(formValues.email)) {
-        setError("Please enter a valid email address");
-        return;
-      }
-
-      if (res) {
-	      // Записуємо користувача у глобальний стан
-	      setUser(res)
-        router.push('/profile');
-      } else {
-        setError('Invalid email or password');
-      }
-    } catch (error) {
-      setError(
-        (error as ApiError).response?.data?.error ??
-          (error as ApiError).message ??
-          'Oops... some error'
-      )
+      await register(form);
+      router.push("/profile");
+    } catch (err: unknown) {
+      console.error(err);
+      setError("Ошибка регистрации");
     }
   };
 
-
   return (
-    <div className={css.mainContent}>
-      <h1 className={css.formTitle}>Sign up</h1>
-      <form action={handleSubmit} className={css.form}>
-        <label className={css.formGroup}>
-          Username
-          <input type="text" name="userName" className={css.input} required />
-        </label>
-        <label className={css.formGroup}>
-          Email
-          <input
-            type="email"
-            name="email"
-            required
-            className={css.input} />
-        </label>
-        <label className={css.formGroup}>
-          Password
-          <input type="password" name="password" required className={css.input } />
-        </label>
-        <button type="submit" className={css.submitButton}>Register</button>
+    <main className={css.mainContent}>
+      <form onSubmit={handleSubmit} className={css.form}>
+        <h1 className="formTitle">Sign Up</h1>
+        <input
+          name="email"
+          type="email"
+          placeholder="Email"
+          value={form.email}
+          onChange={handleChange}
+          required
+          className={css.input}
+        />
+        <input
+          name="password"
+          type="password"
+          placeholder="Password"
+          value={form.password}
+          onChange={handleChange}
+          required
+          className={css.input}
+        />
+        <input
+          name="userName"
+          type="text"
+          placeholder="Username (optional)"
+          value={form.userName}
+          onChange={handleChange}
+          className={css.input}
+        />
+
+        {error && <p className={css.error}>{error}</p>}
+
+        <button
+          type="submit"
+          className={css.submitButton}
+        >
+          Register
+        </button>
       </form>
-      {error && <p className={css.error}>{error}</p>}
-    </div>
+    </main>
   );
-};
-
-
-export default SignUp;
+}

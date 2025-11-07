@@ -1,23 +1,28 @@
-// lib/store/authStore.ts
+"use client";
 
-import { User } from '@/types/user';
-import { create } from 'zustand';
+import { create } from "zustand";
+import { User } from "@/types/user";
 
-
-type AuthStore = {
-  isAuthenticated: boolean;
+type AuthState = {
   user: User | null;
+  isAuthenticated: boolean;
   setUser: (user: User) => void;
   clearIsAuthenticated: () => void;
+  logoutUser: () => void;
 };
 
-export const useAuthStore = create<AuthStore>()((set) => ({
-  isAuthenticated: false,
+export const useAuthStore = create<AuthState>((set) => ({
   user: null,
-  setUser: (user: User) => {
-    set(() => ({ user, isAuthenticated: true }));
-  },
-  clearIsAuthenticated: () => {
-    set(() => ({ user: null, isAuthenticated: false }));
+  isAuthenticated: false,
+
+  
+  setUser: (user) => set({ user, isAuthenticated: true }),
+
+  
+  clearIsAuthenticated: () => set({ user: null, isAuthenticated: false }),
+
+  
+  logoutUser: () => {
+    set({ user: null, isAuthenticated: false });
   },
 }));

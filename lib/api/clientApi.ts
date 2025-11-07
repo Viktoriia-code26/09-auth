@@ -1,7 +1,10 @@
 // lib/api/clientApi.ts
-import { api } from "./api";
+import { api, createApi } from "./api";
 import { User } from "@/types/user";
 import { Note, NewNoteData } from "@/types/note";
+import { AxiosError } from "axios";
+
+const clientApi = createApi();
 
 // --- Notes --- //
 export const fetchNotes = async ({
@@ -15,65 +18,75 @@ export const fetchNotes = async ({
   currentPage?: number;
   perPage?: number;
 }) => {
-  const { data } = await api.get<{ notes: Note[]; totalPages: number }>("/notes", {
-    params: {
-      search: query || undefined,
-      tag: tag || undefined,
-      page: currentPage,
-      perPage,
-    },
+  const { data } = await clientApi.get<{ notes: Note[]; totalPages: number }>("/notes", {
+    params: { search: query || undefined, tag: tag || undefined, page: currentPage, perPage },
   });
   return data;
 };
 
 export const fetchNoteById = async (id: string) => {
-  const { data } = await api.get<Note>(`/notes/${id}`);
+  const { data } = await clientApi.get<Note>(`/notes/${id}`);
   return data;
 };
 
 export const createNote = async (newNoteData: NewNoteData) => {
-  const { data } = await api.post<Note>("/notes", newNoteData);
+  const { data } = await clientApi.post<Note>("/notes", newNoteData);
   return data;
 };
 
 export const deleteNote = async (id: string) => {
-  const { data } = await api.delete<Note>(`/notes/${id}`);
+  const { data } = await clientApi.delete<Note>(`/notes/${id}`);
   return data;
 };
 
 // --- Auth --- //
-export type RegisterRequest = { email: string; password: string };
-export const register = async (data: RegisterRequest) => {
-  console.log(data);
-  const res = await api.post<User>("/auth/register", data,
-  //   headers: {
-  //   "Content-Type": "application/json",
-  // },
-  )
-  return res.data;
+export type RegisterRequest = {
+  email: string;
+  password: string;
+  userName?: string; 
 };
+export const register = async (data: RegisterRequest) => {
+  const { email, password } = data;
+  try {
+    const client = await api();
+    const res = await client.post("/auth/register", { email, password });
+    console.log("User registered:", res.data);
+  } catch (err: unknown) {
+    if (err instanceof AxiosError && err.response?.status === 409) {
+      alert("This email is already registered. Please sign in instead.");
+    } else {
+      alert("Registration failed. Please try again later.");
+      console.error("Registration error:", err);
+    }
+  }
+}
 
 export type LoginRequest = { email: string; password: string };
 export const login = async (data: LoginRequest) => {
-  const res = await api.post<User>("/auth/login", data);
+  const res = await clientApi.post<User>("/auth/login", data);
   return res.data;
 };
 
 export const logout = async () => {
-  await api.post("/auth/logout");
+  await clientApi.post("/auth/logout");
 };
 
 export const checkSession = async () => {
-  const res = await api.get<User | null>("/auth/session");
-  return res.data;
+  const res = await clientApi.get<{ isAuthenticated: boolean }>("/auth/session");
+  return res.data.isAuthenticated;
 };
 
-export const getMe = async () => {
-  const { data } = await api.get<User>("/users/me");
-  return data;
+export const getMe = async (): Promise<User | null> => {
+  try {
+    const { data } = await clientApi.get<User>("/users/me");
+    return data;
+  } catch (err) {
+    console.error("getMe error:", err);
+    return null;
+  }
 };
 
 export const updateMe = async (payload: Partial<User>) => {
-  const { data } = await api.patch<User>("/users/me", payload);
+  const { data } = await clientApi.patch<User>("/users/me", payload);
   return data;
 };

@@ -1,17 +1,17 @@
 "use client";
 
-import { checkSession, getMe } from "@/lib/api/clientApi";
-import { useAuthStore } from "@/lib/store/authStore";
 import { useEffect, useState } from "react";
+import { getMe, checkSession } from "@/lib/api/clientApi";
+import { useAuthStore } from "@/lib/store/authStore";
 
 type Props = {
   children: React.ReactNode;
 };
 
+
 const AuthProvider = ({ children }: Props) => {
   const [isLoading, setIsLoading] = useState(true);
-  const setUser = useAuthStore((state) => state.setUser);
-  const clearIsAuthenticated = useAuthStore((state) => state.clearIsAuthenticated);
+  const { setUser, clearIsAuthenticated } = useAuthStore();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -37,7 +37,7 @@ const AuthProvider = ({ children }: Props) => {
 
   if (isLoading) {
     return (
-      <div style={{ textAlign: "center", padding: "2rem" }}>
+      <div className="flex justify-center items-center min-h-screen text-gray-500">
         <p>Loading...</p>
       </div>
     );

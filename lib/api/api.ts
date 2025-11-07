@@ -1,11 +1,27 @@
 // lib/api/api.ts
-import axios, { AxiosError, AxiosInstance } from "axios";
+import axios, { AxiosInstance } from "axios";
 
-const baseURL = process.env.NEXT_PUBLIC_API_URL + "/api";
+export const createApi = (cookieHeader?: string): AxiosInstance => {
+  const baseURL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000"}/api`;
 
-export const api: AxiosInstance = axios.create({
-  baseURL,
-  withCredentials: true, // підтримка cookies
-});
+  const instance = axios.create({
+    baseURL,
+    withCredentials: true, 
+    headers: {
+      "Content-Type": "application/json",
+      ...(cookieHeader ? { Cookie: cookieHeader } : {}),
+    },
+  });
 
-export type ApiError = AxiosError<{ error: string; message?: string }>;
+  instance.interceptors.response.use(
+    (response) => response,
+    (error) => {
+      console.error("Axios error:", error?.response?.data || error.message);
+      return Promise.reject(error);
+    }
+  );
+
+  return instance;
+};
+
+export { createApi as api };
