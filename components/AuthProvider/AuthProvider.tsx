@@ -1,49 +1,53 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMe, checkSession } from "@/lib/api/clientApi";
+import { getMe } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
+import type { User } from "@/types/user";
+import css from "../Loader/Loader.module.css"
 
-type Props = {
+export default function AuthProvider({
+  children,
+  ssrUser,
+}: {
   children: React.ReactNode;
-};
-
-
-const AuthProvider = ({ children }: Props) => {
+  ssrUser?: User | null;
+}) {
+  const { setUser, clearUser } = useAuthStore();
   const [isLoading, setIsLoading] = useState(true);
-  const { setUser, clearIsAuthenticated } = useAuthStore();
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const isAuthenticated = await checkSession();
-
-        if (isAuthenticated) {
-          const user = await getMe();
-          if (user) setUser(user);
-        } else {
-          clearIsAuthenticated();
-        }
-      } catch (error) {
-        console.error("AuthProvider error:", error);
-        clearIsAuthenticated();
-      } finally {
+    const init = async () => {
+      if (ssrUser) {
+        setUser(ssrUser);
         setIsLoading(false);
+        return;
       }
+
+      const token = localStorage.getItem("token");
+      if (!token) {
+        clearUser();
+        setIsLoading(false);
+        return;
+      }
+
+      const user = await getMe();
+      if (user) setUser(user);
+      else clearUser();
+
+      setIsLoading(false);
     };
 
-    fetchUser();
-  }, [setUser, clearIsAuthenticated]);
+    init();
+  }, [setUser, clearUser, ssrUser]);
 
   if (isLoading) {
     return (
-      <div className="flex justify-center items-center min-h-screen text-gray-500">
+      <div className={css.text}>
         <p>Loading...</p>
       </div>
     );
   }
 
   return <>{children}</>;
-};
-
-export default AuthProvider;
+}

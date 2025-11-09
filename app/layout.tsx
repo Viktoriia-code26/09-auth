@@ -1,3 +1,4 @@
+// app/layout.tsx
 import "./globals.css";
 import Header from "@/components/Header/Header";
 import Footer from "@/components/Footer/Footer";
@@ -5,6 +6,7 @@ import TanStackProvider from "@/components/TanStackProvider/TanStackProvider";
 import { Roboto } from "next/font/google";
 import { Metadata } from "next";
 import AuthProvider from "@/components/AuthProvider/AuthProvider";
+import { getServerMe } from "@/lib/api/serverApi";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -12,6 +14,7 @@ const roboto = Roboto({
   variable: "--font-roboto",
   display: "swap",
 });
+
 export const metadata: Metadata = {
   title: "NoteHub",
   description: "Create and manage your notes easily with NoteHub.",
@@ -32,20 +35,30 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({ children, modal }: { children: React.ReactNode; modal: React.ReactNode }) {
+
+export default async function RootLayout({
+  children,
+  modal,
+}: {
+  children: React.ReactNode;
+  modal: React.ReactNode;
+}) {
+
+  const ssrUser = await getServerMe();
+
   return (
     <html lang="en">
       <body className={roboto.variable}>
         <div id="modal-root"></div>
         <TanStackProvider>
-          <AuthProvider> 
-          <Header />
-          <main>
-            {children}
-            {modal}
-          </main>
-          <Footer />
-           </AuthProvider>
+          <AuthProvider ssrUser={ssrUser}>
+            <Header />
+            <main>
+              {children}
+              {modal}
+            </main>
+            <Footer />
+          </AuthProvider>
         </TanStackProvider>
       </body>
     </html>

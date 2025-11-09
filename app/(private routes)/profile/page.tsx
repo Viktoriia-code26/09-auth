@@ -1,21 +1,16 @@
-import css from "./ProfilePage.module.css";
-import Link from "next/link";
+// app/(private routes)/profile/page.tsx
 import Image from "next/image";
+import Link from "next/link";
 import { getServerMe } from "@/lib/api/serverApi";
+import css from "./ProfilePage.module.css";
 
-export default async function Profile() {
+export default async function ProfilePage() {
   const user = await getServerMe();
 
   if (!user) {
     return (
-      <main className={css.mainContent}>
-        <div className={css.profileCard}>
-          <h1 className={css.formTitle}>Profile Page</h1>
-          <p>Не удалось загрузить профиль. Пожалуйста, войдите снова.</p>
-          <Link href="/sign-in" className={css.editProfileButton}>
-            Sign In
-          </Link>
-        </div>
+      <main className="flex justify-center items-center min-h-screen">
+        <p>Не авторизован. Пожалуйста, <Link href="/sign-in">войдите</Link>.</p>
       </main>
     );
   }
@@ -25,19 +20,15 @@ export default async function Profile() {
       <div className={css.profileCard}>
         <div className={css.header}>
           <h1 className={css.formTitle}>Profile Page</h1>
-          <Link
-            href="/profile/edit"
-            className={css.editProfileButton}
-            prefetch={false}
-          >
+          <Link href="/profile/edit" className={css.editProfileButton}>
             Edit Profile
           </Link>
         </div>
 
         <div className={css.avatarWrapper}>
           <Image
-            src={user.photoUrl || "/default-avatar.png"}
-            alt={user.userName || "User Avatar"}
+            src={user.avatar || "/default-avatar.png"}
+            alt={user.username || "User Avatar"}
             width={120}
             height={120}
             className={css.avatar}
@@ -45,8 +36,8 @@ export default async function Profile() {
         </div>
 
         <div className={css.profileInfo}>
-          <p>Username: {user.userName || "—"}</p>
-          <p>Email: {user.email || "—"}</p>
+          <p><strong>Username:</strong> {user.username || "—"}</p>
+          <p><strong>Email:</strong> {user.email || "—"}</p>
         </div>
       </div>
     </main>

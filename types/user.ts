@@ -1,12 +1,12 @@
 
-export type User = {
+export interface User {
   id: string;
   email: string;
-  userName?: string;
-  photoUrl?: string;
-  createdAt: Date;
-  updatedAt: Date;
-};
+  username?: string;
+  avatar?: string | null;
+  createdAt?: string;
+  updatedAt?: string;
+}
 export interface LoginPayload {
   email: string;
   password: string;

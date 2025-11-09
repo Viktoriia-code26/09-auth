@@ -3,7 +3,8 @@ import getQueryClient from "@/lib/getQueryClient";
 
 import NotesClient from "./Notes.client";
 import type { Metadata } from "next";
-import { fetchNotes } from "@/lib/api/serverApi";
+import { fetchNotes } from "@/lib/api/clientApi";
+
 
 interface FilteredNotesPageProps {
   params: Promise<{ slug?: string[] }>;

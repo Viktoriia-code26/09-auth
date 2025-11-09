@@ -1,26 +1,136 @@
-// lib/api/clientApi.ts
-import { api, createApi } from "./api";
-import { User } from "@/types/user";
-import { Note, NewNoteData } from "@/types/note";
-import { AxiosError } from "axios";
+import axios, { AxiosInstance } from "axios";
+import type { User } from "@/types/user";
+import type { Note, NewNoteData } from "@/types/note";
 
-const clientApi = createApi();
+/* ---------- TYPES ---------- */
+export type RegisterRequest = {
+  email: string;
+  password: string;
+  username?: string; // 👈 необязательное поле
+};
 
-// --- Notes --- //
-export const fetchNotes = async ({
-  query = "",
-  tag,
-  currentPage = 1,
-  perPage = 12,
-}: {
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
+
+export type LoginResponse = {
+  token: string;
+  user: User;
+};
+
+/* ---------- CREATE AXIOS INSTANCE ---------- */
+export const clientApi: AxiosInstance = axios.create({
+  baseURL: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`,
+  withCredentials: true,
+  headers: { "Content-Type": "application/json" },
+});
+
+/* ---------- REQUEST INTERCEPTOR ---------- */
+clientApi.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+/* ---------- RESPONSE INTERCEPTOR ---------- */
+clientApi.interceptors.response.use(
+  (res) => res,
+  (err) => {
+    if (err.response?.status === 401) {
+      console.warn("Unauthorized – пропускаем /api/users/me");
+      return Promise.resolve({ data: null });
+    }
+    return Promise.reject(err);
+  }
+);
+
+/* ---------- AUTH ---------- */
+export const register = async (data: RegisterRequest): Promise<User> => {
+  const res = await clientApi.post<User>("/auth/register", data);
+  return res.data;
+};
+
+export const login = async (data: LoginRequest): Promise<User> => {
+  try {
+    const res = await clientApi.post<LoginResponse>("/auth/login", data);
+    const token = res.data?.token;
+
+    if (token) {
+      localStorage.setItem("token", token);
+      document.cookie = `accessToken=${token}; path=/; SameSite=Lax`;
+      document.cookie = `token=${token}; path=/; SameSite=Lax`;
+    }
+
+    return res.data.user;
+  } catch (err) {
+    if (axios.isAxiosError(err)) {
+      const status = err.response?.status;
+
+      if (status === 401) {
+        throw new Error("Неверный email или пароль");
+      }
+
+      throw new Error(
+        err.response?.data?.message || "Ошибка при авторизации"
+      );
+    }
+
+    throw new Error("Непредвиденная ошибка");
+  }
+};
+
+export const logout = async () => {
+  await clientApi.post("/auth/logout");
+  localStorage.removeItem("token"); 
+};
+
+export const checkSession = async (): Promise<boolean> => {
+  try {
+    const res = await clientApi.get("/auth/session");
+    return res.status === 200;
+  } catch {
+    return false;
+  }
+};
+
+export const getMe = async (): Promise<User | null> => {
+  try {
+    const { data } = await clientApi.get<User>("/users/me");
+    return data;
+  } catch (err) {
+    if (axios.isAxiosError(err) && err.response?.status === 401) {
+      return null;
+    }
+    console.error("getMe error:", err);
+    return null;
+  }
+};
+
+/* ---------- USER ---------- */
+export const updateMe = async (payload: FormData | Partial<User>) => {
+  const res = await clientApi.patch<User>("/users/me", payload, {
+    headers:
+      payload instanceof FormData
+        ? { "Content-Type": "multipart/form-data" }
+        : { "Content-Type": "application/json" },
+  });
+  return res.data;
+};
+
+/* ---------- NOTES ---------- */
+export const fetchNotes = async (params: {
   query?: string;
   tag?: string;
   currentPage?: number;
   perPage?: number;
 }) => {
-  const { data } = await clientApi.get<{ notes: Note[]; totalPages: number }>("/notes", {
-    params: { search: query || undefined, tag: tag || undefined, page: currentPage, perPage },
-  });
+  const { data } = await clientApi.get<{ notes: Note[]; totalPages: number }>(
+    "/notes",
+    { params }
+  );
   return data;
 };
 
@@ -36,57 +146,5 @@ export const createNote = async (newNoteData: NewNoteData) => {
 
 export const deleteNote = async (id: string) => {
   const { data } = await clientApi.delete<Note>(`/notes/${id}`);
-  return data;
-};
-
-// --- Auth --- //
-export type RegisterRequest = {
-  email: string;
-  password: string;
-  userName?: string; 
-};
-export const register = async (data: RegisterRequest) => {
-  const { email, password } = data;
-  try {
-    const client = await api();
-    const res = await client.post("/auth/register", { email, password });
-    console.log("User registered:", res.data);
-  } catch (err: unknown) {
-    if (err instanceof AxiosError && err.response?.status === 409) {
-      alert("This email is already registered. Please sign in instead.");
-    } else {
-      alert("Registration failed. Please try again later.");
-      console.error("Registration error:", err);
-    }
-  }
-}
-
-export type LoginRequest = { email: string; password: string };
-export const login = async (data: LoginRequest) => {
-  const res = await clientApi.post<User>("/auth/login", data);
-  return res.data;
-};
-
-export const logout = async () => {
-  await clientApi.post("/auth/logout");
-};
-
-export const checkSession = async () => {
-  const res = await clientApi.get<{ isAuthenticated: boolean }>("/auth/session");
-  return res.data.isAuthenticated;
-};
-
-export const getMe = async (): Promise<User | null> => {
-  try {
-    const { data } = await clientApi.get<User>("/users/me");
-    return data;
-  } catch (err) {
-    console.error("getMe error:", err);
-    return null;
-  }
-};
-
-export const updateMe = async (payload: Partial<User>) => {
-  const { data } = await clientApi.patch<User>("/users/me", payload);
   return data;
 };
