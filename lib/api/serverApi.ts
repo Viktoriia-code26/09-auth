@@ -45,7 +45,7 @@ export const getServerMe = async (): Promise<User | null> => {
 };
 
 /* ---------- Получение всех заметок ---------- */
-export const fetchServerNotes = async (params?: {
+export const fetchNotes = async (params?: {
   query?: string;
   tag?: string;
   currentPage?: number;
@@ -70,7 +70,7 @@ export const fetchServerNotes = async (params?: {
 };
 
 /* ---------- Получение заметки по ID ---------- */
-export const fetchServerNoteById = async (id: string): Promise<Note | null> => {
+export const fetchNoteById = async (id: string): Promise<Note | null> => {
   try {
     const api = await createServerApi();
     const { data } = await api.get<Note>(`/notes/${id}`);
