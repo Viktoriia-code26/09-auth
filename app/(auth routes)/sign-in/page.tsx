@@ -2,48 +2,72 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/store/authStore";
 import { login, LoginRequest } from "@/lib/api/clientApi";
+import { useAuthStore } from "@/lib/store/authStore";
 import css from "./SignInPage.module.css";
 
-const SignIn = () => {
+export default function SignInPage() {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const router = useRouter();
-  const [error, setError] = useState("");
   const setUser = useAuthStore((state) => state.setUser);
 
- const handleSubmit = async (formData: FormData) => {
-  setError("");
-  try {
-    const formValues = Object.fromEntries(formData) as LoginRequest;
-    const user = await login(formValues);
-    setUser(user);
-    router.push("/profile");
-  } catch (err: unknown) {
-    if (err instanceof Error) {
-      setError(err.message);
-    } else {
-      setError("Ошибка входа");
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setError("");
+    setIsLoading(true);
+
+    try {
+      const formData = new FormData(e.currentTarget);
+      const email = formData.get("email") as string;
+      const password = formData.get("password") as string;
+
+      const user = await login({ email, password } as LoginRequest);
+
+      if (user) {
+        setUser(user); 
+        window.location.replace("/profile"); 
+      } else {
+        setError("Неверный email или пароль");
+      }
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError("Ошибка входа");
+      }
+    } finally {
+      setIsLoading(false);
     }
-  }
-};
+  };
 
   return (
-    <form action={handleSubmit} className={css.form}>
-      <h1 className={css.formTitle}>Sign in</h1>
+    <form onSubmit={handleSubmit} className={css.form}>
+      <h1 className={css.formTitle}>Sign In</h1>
+
       <label className={css.formGroup}>
         Email
         <input type="email" name="email" required className={css.input} />
       </label>
+
       <label className={css.formGroup}>
         Password
-        <input type="password" name="password" required className={css.input} />
+        <input
+          type="password"
+          name="password"
+          required
+          minLength={6}
+          className={css.input}
+        />
       </label>
-      <button type="submit" className={css.submitButton}>
-        Log in
+
+      <button type="submit" disabled={isLoading} className={css.submitButton}>
+        {isLoading ? "Logging in..." : "Log in"}
       </button>
+
       {error && <p className={css.error}>{error}</p>}
     </form>
   );
-};
-
-export default SignIn;
+}

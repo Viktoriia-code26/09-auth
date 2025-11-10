@@ -3,25 +3,29 @@ import Image from "next/image";
 import Link from "next/link";
 import { getServerMe } from "@/lib/api/serverApi";
 import css from "./ProfilePage.module.css";
+import type { Metadata } from "next";
+import UnauthorizedMessage from "@/components/UnathorizedMessage/UnathoraizedMessage";
+
+export const metadata: Metadata = {
+  title: "Profile | NoteHub",
+  description: "Персональна сторінка користувача з інформацією облікового запису.",
+};
 
 export default async function ProfilePage() {
   const user = await getServerMe();
 
   if (!user) {
-    return (
-      <main className="flex justify-center items-center min-h-screen">
-        <p>Не авторизован. Пожалуйста, <Link href="/sign-in">войдите</Link>.</p>
-      </main>
-    );
+  
+    return <UnauthorizedMessage />;
   }
 
   return (
     <main className={css.mainContent}>
       <div className={css.profileCard}>
         <div className={css.header}>
-          <h1 className={css.formTitle}>Profile Page</h1>
+          <h1 className={css.formTitle}>Профіль користувача</h1>
           <Link href="/profile/edit" className={css.editProfileButton}>
-            Edit Profile
+            Редагувати профіль
           </Link>
         </div>
 
@@ -36,8 +40,12 @@ export default async function ProfilePage() {
         </div>
 
         <div className={css.profileInfo}>
-          <p><strong>Username:</strong> {user.username || "—"}</p>
-          <p><strong>Email:</strong> {user.email || "—"}</p>
+          <p>
+            <strong>Ім’я користувача:</strong> {user.username || "—"}
+          </p>
+          <p>
+            <strong>Email:</strong> {user.email || "—"}
+          </p>
         </div>
       </div>
     </main>

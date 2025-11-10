@@ -65,4 +65,21 @@
     font-size: 12px;
     margin-top: 4px;
     text-align: center;
+    animation: fadeIn 0.3s ease-in;
+}
+.success {
+    color: #10b981;
+    text-align: center;
+    font-size: 0.95rem;
+    animation: fadeIn 0.3s ease-in;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+
+    to {
+        opacity: 1;
+    }
 }

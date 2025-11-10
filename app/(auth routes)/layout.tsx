@@ -1,25 +1,32 @@
-// app/(public routes)/layout.tsx
+"use client";
 
-'use client';
-
-import { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import css from "../../components/Loader/Loader.module.css"
 
 type Props = {
   children: React.ReactNode;
 };
 
-export default function PublicLayout({ children }: Props) {
-  const [loading, setLoading] = useState(true);
 
+export default function AuthLayout({ children }: Props) {
+  const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
 
   useEffect(() => {
-    // refresh викличе перезавантаження даних
     router.refresh();
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setLoading(false);
+
+    const timer = setTimeout(() => setIsLoading(false), 100);
+    return () => clearTimeout(timer);
   }, [router]);
 
-  return <>{loading ? <div>Loading...</div> : children}</>;
+  if (isLoading) {
+    return (
+      <div className={css.text}>
+        <p>Loading...</p>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 }

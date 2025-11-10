@@ -3,29 +3,35 @@ import { cookies } from "next/headers";
 
 export const createServerApi = async (): Promise<AxiosInstance> => {
   const cookieStore = await cookies();
-  const cookieToken =
+  const token =
     cookieStore.get("accessToken")?.value ||
-    cookieStore.get("token")?.value ||      
+    cookieStore.get("token")?.value ||
     null;
 
-  const baseURL = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`;
+  if (!token) {
+    console.warn("⚠️ No valid token (SSR) — skipping request");
+  }
 
   const instance = axios.create({
-    baseURL,
+    baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api`,
     withCredentials: true,
     headers: {
       "Content-Type": "application/json",
-      ...(cookieToken ? { Authorization: `Bearer ${cookieToken}` } : {}),
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
     },
   });
 
   instance.interceptors.response.use(
     (res) => res,
     (err) => {
-      const status = err?.response?.status;
-      if (status !== 401) {
-        console.error("Server Axios error:", err?.response?.data || err.message);
+      if (err.response?.status === 401) {
+        console.warn("🔒 Unauthorized (SSR) — handled gracefully");
+        return Promise.resolve({ data: null });
       }
+      console.error("❌ Server Axios error:", {
+        status: err.response?.status,
+        message: err.message,
+      });
       return Promise.reject(err);
     }
   );

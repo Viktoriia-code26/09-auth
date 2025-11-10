@@ -1,10 +1,9 @@
-import { cookies } from "next/headers";
+
 import type { AxiosError } from "axios";
 import { createServerApi } from "./api";
-import { User } from "@/types/user";
-import { Note } from "@/types/note";
+import type { User } from "@/types/user";
+import type { Note } from "@/types/note";
 
-/* ---------- Проверка сессии ---------- */
 export const checkSession = async (): Promise<boolean> => {
   try {
     const api = await createServerApi();
@@ -17,34 +16,26 @@ export const checkSession = async (): Promise<boolean> => {
   }
 };
 
-/* ---------- Получение текущего пользователя ---------- */
 export const getServerMe = async (): Promise<User | null> => {
   try {
-    const cookieStore = await cookies();
-    const token =
-      cookieStore.get("accessToken")?.value ||
-      cookieStore.get("token")?.value;
-
-    console.log("SSR token:", token ? "✅ есть" : "❌ нет");
-
-    if (!token) return null;
-
     const api = await createServerApi();
-    const { data } = await api.get<User>("/users/me");
-
+    const { data } = await api.get<User | null>("/users/me");
+    if (!data) {
+      console.log("🔒 No user data from /users/me (SSR). Returning null");
+      return null;
+    }
     return data;
   } catch (error) {
     const err = error as AxiosError;
-    console.error(
-      "getServerMe error:",
-      err.response?.status || "unknown",
-      err.response?.data || err.message
-    );
+    if (err.response?.status === 401) {
+      console.log("⚠️ getServerMe → 401 Unauthorized (returning null)");
+      return null;
+    }
+    console.error("getServerMe error:", err.message);
     return null;
   }
 };
 
-/* ---------- Получение всех заметок ---------- */
 export const fetchNotes = async (params?: {
   query?: string;
   tag?: string;
@@ -53,23 +44,29 @@ export const fetchNotes = async (params?: {
 }): Promise<{ notes: Note[]; totalPages: number } | null> => {
   try {
     const api = await createServerApi();
-    const { data } = await api.get<{ notes: Note[]; totalPages: number }>("/notes", {
-      params: {
-        search: params?.query || undefined,
-        tag: params?.tag || undefined,
-        page: params?.currentPage || 1,
-        perPage: params?.perPage || 12,
-      },
-    });
+    const { data } = await api.get<{ notes: Note[]; totalPages: number }>(
+      "/notes",
+      {
+        params: {
+          search: params?.query || undefined,
+          tag: params?.tag || undefined,
+          page: params?.currentPage || 1,
+          perPage: params?.perPage || 12,
+        },
+      }
+    );
     return data;
   } catch (error) {
     const err = error as AxiosError;
-    console.error("fetchServerNotes error:", err.response?.status, err.response?.data || err.message);
+    console.error(
+      "fetchServerNotes error:",
+      err.response?.status,
+      err.response?.data || err.message
+    );
     return null;
   }
 };
 
-/* ---------- Получение заметки по ID ---------- */
 export const fetchNoteById = async (id: string): Promise<Note | null> => {
   try {
     const api = await createServerApi();
@@ -77,7 +74,11 @@ export const fetchNoteById = async (id: string): Promise<Note | null> => {
     return data;
   } catch (error) {
     const err = error as AxiosError;
-    console.error("fetchServerNoteById error:", err.response?.status, err.response?.data || err.message);
+    console.error(
+      "fetchServerNoteById error:",
+      err.response?.status,
+      err.response?.data || err.message
+    );
     return null;
   }
 };

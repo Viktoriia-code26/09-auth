@@ -1,10 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getMe } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
+import { getMe } from "@/lib/api/clientApi";
 import type { User } from "@/types/user";
-import css from "../Loader/Loader.module.css"
+import css from "../Loader/Loader.module.css";
 
 export default function AuthProvider({
   children,
@@ -17,34 +17,40 @@ export default function AuthProvider({
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const init = async () => {
-      if (ssrUser) {
-        setUser(ssrUser);
-        setIsLoading(false);
-        return;
-      }
-
-      const token = localStorage.getItem("token");
-      if (!token) {
+    const initAuth = async () => {
+      try {
+        if (ssrUser) {
+          setUser(ssrUser);
+          setIsLoading(false);
+          return;
+        }
+        const token = localStorage.getItem("token");
+        if (!token) {
+          clearUser();
+          setIsLoading(false);
+          return;
+        }
+        const user = await getMe();
+        if (user) {
+          setUser(user);
+        } else {
+          clearUser();
+        }
+      } catch (err) {
+        console.error("AuthProvider init error:", err);
         clearUser();
+      } finally {
         setIsLoading(false);
-        return;
       }
-
-      const user = await getMe();
-      if (user) setUser(user);
-      else clearUser();
-
-      setIsLoading(false);
     };
 
-    init();
-  }, [setUser, clearUser, ssrUser]);
+    initAuth();
+  }, [ssrUser, setUser, clearUser]);
 
   if (isLoading) {
     return (
       <div className={css.text}>
-        <p>Loading...</p>
+        <p>Loading authentication...</p>
       </div>
     );
   }

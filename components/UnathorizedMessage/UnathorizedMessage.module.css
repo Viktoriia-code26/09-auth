@@ -1,0 +1,22 @@
+.mainContent {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 60vh;
+    text-align: center;
+}
+
+.error {
+    font-size: 1.2rem;
+    color: #555;
+}
+
+.loginLink {
+    color: #0070f3;
+    text-decoration: underline;
+    cursor: pointer;
+}
+
+.loginLink:hover {
+    color: #0052a3;
+}

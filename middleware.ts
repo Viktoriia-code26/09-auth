@@ -1,4 +1,4 @@
-// middleware.ts
+
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
@@ -15,18 +15,16 @@ export async function middleware(req: NextRequest) {
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
   const isPrivate = PRIVATE_ROUTES.some((r) => pathname.startsWith(r));
 
-  
+
   if (!accessToken && isPrivate) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/sign-in";
-    return NextResponse.redirect(url);
+    const signInUrl = new URL("/sign-in", req.url);
+    signInUrl.searchParams.set("redirectTo", pathname);
+    return NextResponse.redirect(signInUrl);
   }
 
-
   if (accessToken && isPublic) {
-    const url = req.nextUrl.clone();
-    url.pathname = "/profile";
-    return NextResponse.redirect(url);
+    const homeUrl = new URL("/", req.url);
+    return NextResponse.redirect(homeUrl);
   }
 
   return NextResponse.next();

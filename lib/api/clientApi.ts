@@ -1,4 +1,4 @@
-import axios, { AxiosInstance } from "axios";
+import axios, { AxiosInstance, AxiosError } from "axios";
 import type { User } from "@/types/user";
 import type { Note, NewNoteData } from "@/types/note";
 
@@ -6,7 +6,7 @@ import type { Note, NewNoteData } from "@/types/note";
 export type RegisterRequest = {
   email: string;
   password: string;
-  username?: string; // 👈 необязательное поле
+  username?: string;
 };
 
 export type LoginRequest = {
@@ -19,9 +19,14 @@ export type LoginResponse = {
   user: User;
 };
 
-/* ---------- CREATE AXIOS INSTANCE ---------- */
+export type UpdateUserRequest = {
+  username?: string;
+  avatar?: File;
+};
+
+/* ---------- CREATE CLIENT AXIOS INSTANCE ---------- */
 export const clientApi: AxiosInstance = axios.create({
-  baseURL: `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:5000"}/api`,
+  baseURL: `${process.env.NEXT_PUBLIC_API_URL}/api`,
   withCredentials: true,
   headers: { "Content-Type": "application/json" },
 });
@@ -40,7 +45,7 @@ clientApi.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
-      console.warn("Unauthorized – пропускаем /api/users/me");
+      console.warn("⚠️ Unauthorized — пропускаем /users/me");
       return Promise.resolve({ data: null });
     }
     return Promise.reject(err);
@@ -49,68 +54,54 @@ clientApi.interceptors.response.use(
 
 /* ---------- AUTH ---------- */
 export const register = async (data: RegisterRequest): Promise<User> => {
-  const res = await clientApi.post<User>("/auth/register", data);
-  return res.data;
-};
-
-export const login = async (data: LoginRequest): Promise<User> => {
   try {
-    const res = await clientApi.post<LoginResponse>("/auth/login", data);
+    const res = await clientApi.post<LoginResponse>("/auth/register", data);
     const token = res.data?.token;
 
     if (token) {
       localStorage.setItem("token", token);
       document.cookie = `accessToken=${token}; path=/; SameSite=Lax`;
-      document.cookie = `token=${token}; path=/; SameSite=Lax`;
     }
 
     return res.data.user;
-  } catch (err) {
-    if (axios.isAxiosError(err)) {
-      const status = err.response?.status;
-
-      if (status === 401) {
-        throw new Error("Неверный email или пароль");
-      }
-
-      throw new Error(
-        err.response?.data?.message || "Ошибка при авторизации"
-      );
+  } catch (error) {
+    const err = error as AxiosError<{ message?: string }>;
+    if (err.response?.status === 409) {
+      throw new Error("Пользователь с таким email уже существует");
     }
-
-    throw new Error("Непредвиденная ошибка");
+    throw new Error(err.response?.data?.message || "Ошибка регистрации");
   }
 };
 
+
+export const login = async (data: LoginRequest): Promise<User> => {
+  const res = await clientApi.post<LoginResponse>("/auth/login", data);
+  
+  const token = res.data?.token;
+  if (token) {
+    localStorage.setItem("token", token);
+  }
+
+  return res.data.user; 
+};
 export const logout = async () => {
   await clientApi.post("/auth/logout");
-  localStorage.removeItem("token"); 
+  localStorage.removeItem("token");
 };
 
-export const checkSession = async (): Promise<boolean> => {
-  try {
-    const res = await clientApi.get("/auth/session");
-    return res.status === 200;
-  } catch {
-    return false;
-  }
-};
-
+/* ---------- USER ---------- */
 export const getMe = async (): Promise<User | null> => {
   try {
     const { data } = await clientApi.get<User>("/users/me");
     return data;
   } catch (err) {
-    if (axios.isAxiosError(err) && err.response?.status === 401) {
-      return null;
-    }
+    if (axios.isAxiosError(err) && err.response?.status === 401) return null;
     console.error("getMe error:", err);
     return null;
   }
 };
 
-/* ---------- USER ---------- */
-export const updateMe = async (payload: FormData | Partial<User>) => {
+export const updateMe = async (payload: FormData | UpdateUserRequest) => {
   const res = await clientApi.patch<User>("/users/me", payload, {
     headers:
       payload instanceof FormData
