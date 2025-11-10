@@ -1,17 +1,22 @@
 import { QueryClient, dehydrate, HydrationBoundary } from "@tanstack/react-query";
-
 import NoteDetailsClient from "./NoteDetails.client";
 import { Metadata } from "next";
 import { fetchNoteById } from "@/lib/api/serverApi";
-
 
 type Props = {
   params: Promise<{ id: string }>;
 };
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
-  const { id } = await params; 
+  const { id } = await params;
   const note = await fetchNoteById(id);
+
+  if (!note) {
+    return {
+      title: "Note not found",
+      description: "The requested note could not be found.",
+    };
+  }
 
   return {
     title: `Note: ${note.title}`,
@@ -20,23 +25,33 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: `Note: ${note.title}`,
       description: note.content.slice(0, 30),
       url: `https://notehub.com/notes/${id}`,
-      siteName: 'NoteHub',
+      siteName: "NoteHub",
       images: [
         {
-          url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+          url: "https://ac.goit.global/fullstack/react/notehub-og-meta.jpg",
           width: 1200,
           height: 630,
           alt: note.title,
         },
       ],
-      type: 'website',
+      type: "website",
     },
   };
 }
 
 export default async function NoteDetails({ params }: Props) {
-  const { id } = await params; 
+  const { id } = await params;
   const queryClient = new QueryClient();
+
+  const note = await fetchNoteById(id);
+  if (!note) {
+    return (
+      <div style={{ padding: "2rem", textAlign: "center" }}>
+        <h2>Note not found</h2>
+        <p>The note you are looking for does not exist or was deleted.</p>
+      </div>
+    );
+  }
 
   await queryClient.prefetchQuery({
     queryKey: ["note", id],
