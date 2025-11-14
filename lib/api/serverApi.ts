@@ -1,11 +1,10 @@
-// lib/api/serverApi.ts
+
 import { cookies } from "next/headers";
 import { nextServer } from "./api";
 import type { User } from "@/types/user";
 import type { Note } from "@/types/note";
 import type { AxiosError } from "axios";
 
-/* ----------------------------- BUILD COOKIE HEADER ----------------------------- */
 
 export async function buildCookieHeader(): Promise<string> {
   const cookieStore = await cookies();
