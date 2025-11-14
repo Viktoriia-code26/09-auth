@@ -1,62 +1,61 @@
+// lib/api/serverApi.ts
 import { cookies } from "next/headers";
+import { nextServer } from "./api";
 import type { User } from "@/types/user";
 import type { Note } from "@/types/note";
-import { nextServer } from "./api";
-import { AxiosError } from "axios";
+import type { AxiosError } from "axios";
+
+/* ----------------------------- BUILD COOKIE HEADER ----------------------------- */
+
+export async function buildCookieHeader(): Promise<string> {
+  const cookieStore = await cookies();
+
+  return cookieStore
+    .getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join("; ");
+}
+
 
 
 export const getServerMe = async (): Promise<User | null> => {
-  const cookieStore = await cookies();
+  const cookieHeader = await buildCookieHeader();
 
- 
-  const cookieHeader = Array.from(cookieStore.getAll())
-    .map(({ name, value }) => `${name}=${value}`)
-    .join("; ");
-
-  if (!cookieHeader.includes("token") && !cookieHeader.includes("accessToken")) {
-    console.warn("⚠️ No auth cookies found (SSR)");
+  if (!cookieHeader.includes("token")) {
+    console.warn("⚠️ No auth cookie — guest user (SSR)");
     return null;
   }
 
   try {
-    const res = await nextServer.get("/users/me", {
-      headers: {
-        Cookie: cookieHeader,
-      },
+    const res = await nextServer.get<User>("/users/me", {
+      headers: { Cookie: cookieHeader },
     });
 
     return res.data;
-
   } catch (error) {
-    const err = error as AxiosError<unknown>;
+    const err = error as AxiosError;
 
     if (err.response?.status === 401) {
       console.warn("🔒 Unauthorized on SSR");
       return null;
     }
 
-    console.error("❌ SSR getServerMe error:", err.message, err.response?.data);
+    console.error("❌ SSR getServerMe error:", err.response?.data);
     return null;
   }
 };
 
-export const fetchNoteById = async (id: string): Promise<Note | null> => {
-  try {
-    const res = await nextServer.get<Note>(`/notes/${id}`);
-    return res.data;
-  } catch {
-    return null;
-  }
-};
+
+
 export const checkSession = async () => {
-  const cookieStore = await cookies();
-  const res = await nextServer.get("/auth/session", {
-    headers: {
-      Cookie: cookieStore.toString(),
-    },
+  const cookieHeader = await buildCookieHeader();
+
+  return nextServer.get("/auth/session", {
+    headers: { Cookie: cookieHeader },
   });
-  return res;
 };
+
+
 
 export const fetchNotes = async (params?: {
   query?: string;
@@ -64,17 +63,11 @@ export const fetchNotes = async (params?: {
   currentPage?: number;
   perPage?: number;
 }): Promise<{ notes: Note[]; totalPages: number } | null> => {
-  const cookieStore = await cookies();
-  const token = cookieStore.get("token")?.value;
-
-  if (!token) {
-    console.log("SSR: No token → public user → return empty notes");
-    return { notes: [], totalPages: 0 }; 
-  }
+  const cookieHeader = await buildCookieHeader();
 
   try {
-    const { data } = await nextServer.get("/notes", {
-      headers: { Authorization: `Bearer ${token}` },
+    const res = await nextServer.get("/notes", {
+      headers: { Cookie: cookieHeader },
       params: {
         search: params?.query,
         tag: params?.tag,
@@ -83,14 +76,24 @@ export const fetchNotes = async (params?: {
       },
     });
 
-    return data;
-  } catch (e) {
-    const err = e as AxiosError;
-    console.error(
-      "Server fetchNotes error:",
-      err.response?.status,
-      err.response?.data
-    );
+    return res.data;
+  } catch (error) {
+    const err = error as AxiosError;
+    console.error("Server fetchNotes error:", err.response?.status, err.response?.data);
+    return null;
+  }
+};
+
+export const fetchNoteById = async (id: string): Promise<Note | null> => {
+  const cookieHeader = await buildCookieHeader();
+
+  try {
+    const res = await nextServer.get<Note>(`/notes/${id}`, {
+      headers: { Cookie: cookieHeader },
+    });
+
+    return res.data;
+  } catch {
     return null;
   }
 };

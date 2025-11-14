@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/exhaustive-deps */
 'use client';
 
 import { useEffect } from 'react';
@@ -15,12 +16,18 @@ export default function AuthProvider({ children, ssrUser }: Props) {
 
   useEffect(() => {
     if (ssrUser) {
+     
       setUser(ssrUser);
     } else {
+  
+      localStorage.removeItem("token");
+      document.cookie = "token=; Max-Age=0; path=/; SameSite=Lax";
+      
 
       clearIsAuthenticated();
     }
-  }, [ssrUser, setUser, clearIsAuthenticated]);
+
+  }, []);
 
   return <>{children}</>;
 }

@@ -1,14 +1,24 @@
 
+
 export interface User {
-  id: string;
   email: string;
-  username: string; 
-  avatar?: string | null; 
-  createdAt?: string; 
-  updatedAt?: string; 
+  username: string;
+  avatar: string | null;
+  id?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
+
+
 export interface LoginPayload {
+  email: string;
+  password: string;
+}
+
+
+
+export interface RegisterPayload {
   email: string;
   password: string;
 }

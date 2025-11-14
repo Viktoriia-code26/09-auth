@@ -1,7 +1,13 @@
 import { getServerMe } from "@/lib/api/serverApi";
+import css from "./ProfilePage.module.css";
 import Link from "next/link";
 import Image from "next/image";
-import css from "./ProfilePage.module.css";
+import type { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "Your Profile | NoteHub",
+  description: "Перегляд особистих даних користувача.",
+};
 
 export default async function ProfilePage() {
   const user = await getServerMe();
@@ -9,13 +15,8 @@ export default async function ProfilePage() {
   if (!user) {
     return (
       <main className={css.mainContent}>
-        <p className={css.error}>
-          Ви не авторизовані.{" "}
-          <Link href="/sign-in" className={css.link}>
-            Увійдіть
-          </Link>{" "}
-          у систему.
-        </p>
+        <p>You are not authenticated.</p>
+        <Link href="/sign-in">Go to Sign In</Link>
       </main>
     );
   }
@@ -24,7 +25,7 @@ export default async function ProfilePage() {
     <main className={css.mainContent}>
       <div className={css.profileCard}>
         <div className={css.header}>
-          <h1 className={css.formTitle}>Profile Page</h1>
+          <h1 className={css.formTitle}>Profile</h1>
           <Link href="/profile/edit" className={css.editProfileButton}>
             Edit Profile
           </Link>
@@ -32,8 +33,8 @@ export default async function ProfilePage() {
 
         <div className={css.avatarWrapper}>
           <Image
-            src={user.avatar || "/default-avatar.png"}
-            alt={user.username || "User Avatar"}
+            src={user.avatar ?? "/default-avatar.png"}
+            alt="Profile photo"
             width={120}
             height={120}
             className={css.avatar}
@@ -41,12 +42,8 @@ export default async function ProfilePage() {
         </div>
 
         <div className={css.profileInfo}>
-          <p>
-            <strong>Username:</strong> {user.username || "—"}
-          </p>
-          <p>
-            <strong>Email:</strong> {user.email || "—"}
-          </p>
+          <p><strong>Username:</strong> {user.username}</p>
+          <p><strong>Email:</strong> {user.email}</p>
         </div>
       </div>
     </main>

@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance } from 'axios';
+import axios, { AxiosInstance } from 'axios';
 
 const BASE_URL = 'https://notehub-api.goit.study';
 
@@ -9,4 +9,3 @@ export const api: AxiosInstance = axios.create({
   headers: { "Content-Type": "application/json" },
 });
 
-export type ApiError = AxiosError<{ error: string }>

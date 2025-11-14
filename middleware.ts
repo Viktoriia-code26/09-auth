@@ -1,30 +1,28 @@
-
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
 const PUBLIC_ROUTES = ["/sign-in", "/sign-up"];
-const PRIVATE_ROUTES = ["/profile", "/notes"];
+const PRIVATE_PREFIXES = ["/profile", "/notes"];
 
-export async function middleware(req: NextRequest) {
+export function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const accessToken =
-    req.cookies.get("accessToken")?.value ||
-    req.cookies.get("token")?.value;
+  const token =
+    req.cookies.get("token")?.value ||
+    req.cookies.get("accessToken")?.value;
 
   const isPublic = PUBLIC_ROUTES.some((r) => pathname.startsWith(r));
-  const isPrivate = PRIVATE_ROUTES.some((r) => pathname.startsWith(r));
+  const isPrivate = PRIVATE_PREFIXES.some((r) => pathname.startsWith(r));
 
-
-  if (!accessToken && isPrivate) {
+  if (!token && isPrivate) {
     const signInUrl = new URL("/sign-in", req.url);
     signInUrl.searchParams.set("redirectTo", pathname);
     return NextResponse.redirect(signInUrl);
   }
 
-  if (accessToken && isPublic) {
-    const homeUrl = new URL("/", req.url);
-    return NextResponse.redirect(homeUrl);
+
+  if (token && isPublic) {
+    return NextResponse.redirect(new URL("/", req.url));
   }
 
   if (pathname.startsWith("/api/")) {
@@ -33,15 +31,20 @@ export async function middleware(req: NextRequest) {
     proxyUrl.protocol = "https";
     proxyUrl.port = "";
 
-  
-    console.log("🔁 Proxying API request to:", proxyUrl.toString());
-    
+    return NextResponse.redirect(proxyUrl);
+  }
+
   return NextResponse.next();
 }
 
-    return NextResponse.next();
-  }
-
-  export const config = {
-    matcher: ["/api/:path", "/profile/:path*", "/notes/:path*", "/sign-in", "/sign-up"],
-  };
+export const config = {
+  matcher: [
+    "/api/:path*",
+    "/profile",
+    "/profile/:path*",
+    "/notes",
+    "/notes/:path*",
+    "/sign-in",
+    "/sign-up",
+  ],
+};

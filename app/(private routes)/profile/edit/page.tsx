@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMe, updateMe } from "@/lib/api/clientApi";
+import { useAuthStore } from "@/lib/store/authStore";
 import type { User } from "@/types/user";
 import AvatarPicker from "@/components/AvatarPicker/AvatarPicker";
 import css from "./EditProfilePage.module.css";
@@ -10,7 +11,9 @@ import css from "./EditProfilePage.module.css";
 export default function EditProfilePage() {
   const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null);
+  const setUser = useAuthStore((s) => s.setUser);
+
+  const [user, setUserLocal] = useState<User | null>(null);
   const [username, setUsername] = useState("");
   // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -24,7 +27,7 @@ export default function EditProfilePage() {
         router.push("/sign-in");
         return;
       }
-      setUser(current);
+      setUserLocal(current);
       setUsername(current.username ?? "");
     };
 
@@ -39,7 +42,11 @@ export default function EditProfilePage() {
     setError("");
 
     try {
-      await updateMe({ username });
+      const updatedUser = await updateMe({
+        username,
+      });
+
+      setUser(updatedUser);
 
       router.push("/profile");
     } catch (err) {
@@ -65,7 +72,7 @@ export default function EditProfilePage() {
 
         <AvatarPicker
           profilePhotoUrl={user.avatar ?? undefined}
-          onChangePhoto={setImageFile} 
+          onChangePhoto={setImageFile}
         />
 
         <form className={css.profileInfo} onSubmit={handleSubmit}>
@@ -87,11 +94,7 @@ export default function EditProfilePage() {
           {error && <p className={css.error}>{error}</p>}
 
           <div className={css.actions}>
-            <button
-              type="submit"
-              className={css.saveButton}
-              disabled={isSaving}
-            >
+            <button type="submit" className={css.saveButton} disabled={isSaving}>
               {isSaving ? "Saving..." : "Save"}
             </button>
             <button
