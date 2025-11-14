@@ -1,116 +1,60 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from "react";
+import { useRef } from "react";
 import Image from "next/image";
-import css from "./AvatarPicker.module.css";
 
 type Props = {
   profilePhotoUrl?: string;
-  onChangePhoto: (url: string | null) => void; // теперь передаём URL
+  onChangePhoto: (file: File | null) => void;
 };
 
-const CLOUDINARY_UPLOAD_URL = "https://api.cloudinary.com/v1_1/<твое_имя_облака>/upload";
-const CLOUDINARY_PRESET = "<твой_upload_preset>"; // предварительно создай его в Cloudinary Dashboard
+export default function AvatarPicker({ profilePhotoUrl, onChangePhoto }: Props) {
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
-const AvatarPicker = ({ profilePhotoUrl, onChangePhoto }: Props) => {
-  const [previewUrl, setPreviewUrl] = useState<string>("");
-  const [error, setError] = useState<string>("");
-  const [isUploading, setIsUploading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (profilePhotoUrl) {
-      setPreviewUrl(profilePhotoUrl);
-    }
-  }, [profilePhotoUrl]);
-
-  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    setError("");
-
-    if (!file) return;
-
-    if (!file.type.startsWith("image/")) {
-      setError("Only images are allowed");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError("Max file size is 5MB");
-      return;
-    }
-
-  
-    const reader = new FileReader();
-    reader.onloadend = () => setPreviewUrl(reader.result as string);
-    reader.readAsDataURL(file);
-
-  
-    try {
-      setIsUploading(true);
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("upload_preset", CLOUDINARY_PRESET);
-
-      const res = await fetch(CLOUDINARY_UPLOAD_URL, {
-        method: "POST",
-        body: formData,
-      });
-
-      const data = await res.json();
-      if (data.secure_url) {
-        onChangePhoto(data.secure_url); 
-      } else {
-        throw new Error("Upload failed");
-      }
-    } catch (err) {
-      console.error("Upload error:", err);
-      setError("Failed to upload image");
-    } finally {
-      setIsUploading(false);
-    }
-  };
-
-  const handleRemove = () => {
-    onChangePhoto(null);
-    setPreviewUrl("");
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0] ?? null;
+    onChangePhoto(file);
   };
 
   return (
-    <div>
-      <div className={css.picker}>
-        {previewUrl ? (
+    <div className="flex flex-col items-center gap-3">
+      <div>
+        {profilePhotoUrl ? (
           <Image
-            src={previewUrl}
-            alt="User Avatar"
+            src={profilePhotoUrl}
+            alt="Avatar"
             width={120}
             height={120}
-            className={css.avatar}
+            loading="eager"
+            style={{ borderRadius: "50%", objectFit: "cover" }}
           />
         ) : (
-          <div className={css.avatarPlaceholder}>No photo</div>
-        )}
-
-        <label className={previewUrl ? `${css.wrapper} ${css.reload}` : css.wrapper}>
-          📷 Choose photo
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleFileChange}
-            className={css.input}
+          <div
+            style={{
+              width: 120,
+              height: 120,
+              borderRadius: "50%",
+              backgroundColor: "#ddd",
+            }}
           />
-        </label>
-
-        {previewUrl && (
-          <button className={css.remove} onClick={handleRemove} disabled={isUploading}>
-            ❌
-          </button>
         )}
       </div>
 
-      {error && <p className={css.error}>{error}</p>}
-      {isUploading && <p className={css.uploading}>Uploading...</p>}
+      <button
+        type="button"
+        onClick={() => fileInputRef.current?.click()}
+        className="px-3 py-1 rounded bg-blue-500 text-white text-sm"
+      >
+        Change photo
+      </button>
+
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept="image/*"
+        style={{ display: "none" }}
+        onChange={handleFileChange}
+      />
     </div>
   );
-};
-
-export default AvatarPicker;
+}

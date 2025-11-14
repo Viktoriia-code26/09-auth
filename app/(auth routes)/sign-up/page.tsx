@@ -1,56 +1,53 @@
 "use client";
 
 import { useState } from "react";
+import { register, RegisterRequest } from "@/lib/api/clientApi";
 import { useRouter } from "next/navigation";
-import { register } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
+import axios from "axios";
 import css from "./SignUpPage.module.css";
 
 export default function SignUpPage() {
   const router = useRouter();
   const setUser = useAuthStore((s) => s.setUser);
   const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault(); 
+  const handleSubmit = async (formData: FormData) => {
     setError("");
-    setIsLoading(true);
-
-    const form = new FormData(e.currentTarget);
-    const email = form.get("email") as string;
-    const password = form.get("password") as string;
 
     try {
-      const user = await register({ email, password });
+      const values = Object.fromEntries(formData) as RegisterRequest;
+      const user = await register(values);
+
       setUser(user);
       router.push("/profile");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Ошибка регистрации");
-    } finally {
-      setIsLoading(false);
+      if (axios.isAxiosError(err) && err.response?.status === 409) {
+        setError("Email already exists");
+      } else {
+        setError("Registration failed");
+      }
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className={css.form}>
+    <main className={css.mainContent}>
       <h1 className={css.formTitle}>Sign Up</h1>
 
-      <label className={css.formGroup}>
-        Email
-        <input name="email" type="email" required className={css.input} />
-      </label>
+      <form className={css.form} action={handleSubmit}>
+        <label className={css.formGroup}>
+          Email
+          <input type="email" name="email" required className={css.input} />
+        </label>
 
-      <label className={css.formGroup}>
-        Password
-        <input name="password" type="password" required minLength={6} className={css.input} />
-      </label>
+        <label className={css.formGroup}>
+          Password
+          <input type="password" name="password" required className={css.input} />
+        </label>
 
-      <button type="submit" disabled={isLoading} className={css.submitButton}>
-        {isLoading ? "Registering..." : "Register"}
-      </button>
-
-      {error && <p className={css.error}>{error}</p>}
-    </form>
+        <button className={css.submitButton}>Register</button>
+        {error && <p className={css.error}>{error}</p>}
+      </form>
+    </main>
   );
 }

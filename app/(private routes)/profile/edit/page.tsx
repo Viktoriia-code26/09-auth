@@ -1,136 +1,109 @@
 "use client";
 
-import css from "./EditProfilePage.module.css";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { getMe, updateMe } from "@/lib/api/clientApi";
-import { useEffect, useState } from "react";
-import AvatarPicker from "@/components/AvatarPicker/AvatarPicker";
 import type { User } from "@/types/user";
-import { useAuthStore } from "@/lib/store/authStore";
+import AvatarPicker from "@/components/AvatarPicker/AvatarPicker";
+import css from "./EditProfilePage.module.css";
 
 export default function EditProfilePage() {
   const router = useRouter();
-  const { setUser } = useAuthStore(); 
-  const [userName, setUserName] = useState<string>("");
-  const [email, setEmail] = useState<string>("");
-  const [avatar, setAvatar] = useState<string>("");
+
+  const [user, setUser] = useState<User | null>(null);
+  const [username, setUsername] = useState("");
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState<boolean>(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState("");
 
   useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const user = await getMe();
-        if (!user) {
-          console.warn("User is not logged in");
-          router.replace("/sign-in");
-          return;
-        }
-
-        setUserName(user.username ?? "");
-        setEmail(user.email ?? "");
-        setAvatar(user.avatar ?? "");
-      } catch (error) {
-        console.error("Failed to load user:", error);
-        router.replace("/sign-in");
-      } finally {
-        setIsLoading(false);
+    const loadUser = async () => {
+      const current = await getMe();
+      if (!current) {
+        router.push("/sign-in");
+        return;
       }
+      setUser(current);
+      setUsername(current.username ?? "");
     };
 
-    fetchUser();
+    loadUser();
   }, [router]);
 
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    setUserName(event.target.value);
-  }
-
-  const handleSave = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!user) return;
+
     setIsSaving(true);
+    setError("");
 
     try {
-      const formData = new FormData();
-      formData.append("username", userName);
-      if (imageFile) formData.append("avatar", imageFile);
-
-      const updatedUser: User = await updateMe(formData);
-
-      setUserName(updatedUser.username ?? "");
-      setAvatar(updatedUser.avatar ?? "");
-
-      setUser(updatedUser);
-
-      const token = localStorage.getItem("token");
-      if (token) {
-        document.cookie = `accessToken=${token}; path=/; SameSite=Lax`;
-        document.cookie = `token=${token}; path=/; SameSite=Lax`;
-      }
+      await updateMe({ username });
 
       router.push("/profile");
     } catch (err) {
-      console.error("Ошибка сохранения профиля:", err);
-      alert("Не удалось сохранить изменения");
+      console.error("Update profile error:", err);
+      setError("Не удалось сохранить изменения");
     } finally {
       setIsSaving(false);
     }
   };
 
-  const handleCancel = () => {
-    router.push("/profile");
-  };
-
-  if (isLoading) {
+  if (!user) {
     return (
-      <div className="flex justify-center items-center min-h-screen text-gray-500">
+      <main className={css.mainContent}>
         <p>Loading profile...</p>
-      </div>
+      </main>
     );
   }
 
   return (
-    <main>
-      <AvatarPicker
-        profilePhotoUrl={avatar}
-        onChangePhoto={(urlOrFile) => {
-          if (typeof urlOrFile === "string") {
-            setAvatar(urlOrFile);
-          } else {
-            setImageFile(urlOrFile);
-          }
-        }}
-      />
+    <main className={css.mainContent}>
+      <div className={css.profileCard}>
+        <h1 className={css.formTitle}>Edit Profile</h1>
 
-      <form onSubmit={handleSave} className={css.profileInfo}>
-        <div className={css.usernameWrapper}>
-          <label htmlFor="username">Username:</label>
-          <input
-            id="username"
-            type="text"
-            value={userName}
-            onChange={handleChange}
-            className={css.input}
-            required
-            minLength={2}
-          />
-        </div>
+        <AvatarPicker
+          profilePhotoUrl={user.avatar ?? undefined}
+          onChangePhoto={setImageFile} 
+        />
 
-        <p>Email: {email}</p>
+        <form className={css.profileInfo} onSubmit={handleSubmit}>
+          <div className={css.usernameWrapper}>
+            <label htmlFor="username">Username:</label>
+            <input
+              id="username"
+              type="text"
+              className={css.input}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              minLength={2}
+              required
+            />
+          </div>
 
-        <div className={css.actions}>
-          <button type="submit" className={css.saveButton} disabled={isSaving}>
-            {isSaving ? "Saving..." : "Save"}
-          </button>
-          <button
-            type="button"
-            onClick={handleCancel}
-            className={css.cancelButton}
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
+          <p>Email: {user.email}</p>
+
+          {error && <p className={css.error}>{error}</p>}
+
+          <div className={css.actions}>
+            <button
+              type="submit"
+              className={css.saveButton}
+              disabled={isSaving}
+            >
+              {isSaving ? "Saving..." : "Save"}
+            </button>
+            <button
+              type="button"
+              className={css.cancelButton}
+              onClick={() => router.push("/profile")}
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
     </main>
   );
 }

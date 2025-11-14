@@ -27,9 +27,21 @@ export async function middleware(req: NextRequest) {
     return NextResponse.redirect(homeUrl);
   }
 
+  if (pathname.startsWith("/api/")) {
+    const proxyUrl = req.nextUrl.clone();
+    proxyUrl.hostname = "notehub-api.goit.study";
+    proxyUrl.protocol = "https";
+    proxyUrl.port = "";
+
+  
+    console.log("🔁 Proxying API request to:", proxyUrl.toString());
+    
   return NextResponse.next();
 }
 
-export const config = {
-  matcher: ["/profile/:path*", "/notes/:path*", "/sign-in", "/sign-up"],
-};
+    return NextResponse.next();
+  }
+
+  export const config = {
+    matcher: ["/api/:path", "/profile/:path*", "/notes/:path*", "/sign-in", "/sign-up"],
+  };

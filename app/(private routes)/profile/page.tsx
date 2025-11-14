@@ -1,31 +1,32 @@
-// app/(private routes)/profile/page.tsx
-import Image from "next/image";
-import Link from "next/link";
 import { getServerMe } from "@/lib/api/serverApi";
+import Link from "next/link";
+import Image from "next/image";
 import css from "./ProfilePage.module.css";
-import type { Metadata } from "next";
-import UnauthorizedMessage from "@/components/UnathorizedMessage/UnathoraizedMessage";
-
-export const metadata: Metadata = {
-  title: "Profile | NoteHub",
-  description: "Персональна сторінка користувача з інформацією облікового запису.",
-};
 
 export default async function ProfilePage() {
   const user = await getServerMe();
 
   if (!user) {
-  
-    return <UnauthorizedMessage />;
+    return (
+      <main className={css.mainContent}>
+        <p className={css.error}>
+          Ви не авторизовані.{" "}
+          <Link href="/sign-in" className={css.link}>
+            Увійдіть
+          </Link>{" "}
+          у систему.
+        </p>
+      </main>
+    );
   }
 
   return (
     <main className={css.mainContent}>
       <div className={css.profileCard}>
         <div className={css.header}>
-          <h1 className={css.formTitle}>Профіль користувача</h1>
+          <h1 className={css.formTitle}>Profile Page</h1>
           <Link href="/profile/edit" className={css.editProfileButton}>
-            Редагувати профіль
+            Edit Profile
           </Link>
         </div>
 
@@ -41,7 +42,7 @@ export default async function ProfilePage() {
 
         <div className={css.profileInfo}>
           <p>
-            <strong>Ім’я користувача:</strong> {user.username || "—"}
+            <strong>Username:</strong> {user.username || "—"}
           </p>
           <p>
             <strong>Email:</strong> {user.email || "—"}
