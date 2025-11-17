@@ -39,16 +39,16 @@ export default function NotesClient({ initialTag }: NotesClientProps) {
     setCurrentPage(1);
   };
 
-  const { data, isLoading, error, isFetching } = useQuery({
-    queryKey: ["notes", debouncedSearch, tag, currentPage],
-    queryFn: () =>
-      fetchNotes({
-        query: debouncedSearch,
-        tag: tag === "all" ? undefined : tag,
-        currentPage,
-      }),
-    placeholderData: keepPreviousData,
-  });
+ const { data, isLoading, error, isFetching } = useQuery({
+  queryKey: ["notes", debouncedSearch, tag, currentPage],
+  queryFn: () =>
+    fetchNotes({
+      query: debouncedSearch,
+      tag: tag === "all" ? undefined : tag,
+      page: currentPage, 
+    }),
+  placeholderData: keepPreviousData,
+});
 
   const notes = data?.notes ?? [];
   const totalPages = data?.totalPages ?? 1;
