@@ -3,30 +3,32 @@
 import { useState } from "react";
 import { register, RegisterRequest } from "@/lib/api/clientApi";
 import { useRouter } from "next/navigation";
-import { useAuthStore } from "@/lib/store/authStore";
-import axios from "axios";
 import css from "./SignUpPage.module.css";
+import { ApiError } from '@/app/api/api'
+import { useAuthStore } from "@/lib/store/authStore";
 
-export default function SignUpPage() {
+const SignUp = () => {
   const router = useRouter();
-  const setUser = useAuthStore((s) => s.setUser);
-  const [error, setError] = useState("");
+  const [error, setError] = useState('');
+  const setUser = useAuthStore((state) => state.setUser)
+
 
   const handleSubmit = async (formData: FormData) => {
-    setError("");
-
     try {
-      const values = Object.fromEntries(formData) as RegisterRequest;
-      const user = await register(values);
-
-      setUser(user);
-      router.push("/profile");
-    } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 409) {
-        setError("Email already exists");
+      const formValues = Object.fromEntries(formData) as RegisterRequest;
+      const res = await register(formValues);
+      if (res) {
+	      setUser(res)
+        router.push('/profile');
       } else {
-        setError("Registration failed");
+        setError('Invalid email or password');
       }
+    } catch (error) {
+      setError(
+        (error as ApiError).response?.data?.error ??
+          (error as ApiError).message ??
+          'Oops... some error'
+      )
     }
   };
 
@@ -51,3 +53,4 @@ export default function SignUpPage() {
     </main>
   );
 }
+export default SignUp;

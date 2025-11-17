@@ -1,30 +1,26 @@
 "use client";
 
 import { useState } from "react";
-import { login, LoginRequest } from "@/lib/api/clientApi";
-import { useAuthStore } from "@/lib/store/authStore";
+import { extractApiError, login, LoginRequest } from "@/lib/api/clientApi";
 import { useRouter } from "next/navigation";
-import axios from "axios";
 import css from "./SignInPage.module.css";
+import { useAuthStore } from "@/lib/store/authStore";
 
-export default function SignInPage() {
+const SignIn = () => {
   const router = useRouter();
   const [error, setError] = useState("");
-  const setUser = useAuthStore((s) => s.setUser);
+  const setUser = useAuthStore((state) => state.setUser);
 
   const handleSubmit = async (formData: FormData) => {
-    setError("");
     try {
-      const values = Object.fromEntries(formData) as LoginRequest;
-      const user = await login(values);
+      const { email, password } = Object.fromEntries(formData) as LoginRequest;
+      const user = await login(email, password);
+
       setUser(user);
       router.push("/profile");
+
     } catch (err) {
-      if (axios.isAxiosError(err) && err.response?.status === 401) {
-        setError("Invalid email or password");
-      } else {
-        setError("Login failed");
-      }
+      setError(extractApiError(err));
     }
   };
 
@@ -48,4 +44,6 @@ export default function SignInPage() {
       </form>
     </main>
   );
-}
+};
+
+export default SignIn;

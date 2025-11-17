@@ -1,131 +1,127 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 // lib/api/clientApi.ts
 "use client";
 
-import { nextServer } from "./api";
+import { api, ApiError } from "./api";
 import type { User } from "@/types/user";
 import type { Note, NewNoteData } from "@/types/note";
 
-
-
-
-export type LoginRequest = {
-  email: string;
-  password: string;
-};
-
-export type LoginResponse = {
-  token: string;
-  user: User;
-};
-
-export const login = async (data: LoginRequest): Promise<User> => {
-  const res = await nextServer.post<LoginResponse>("/auth/login", data);
-
-  if (!res.data?.token || !res.data?.user) {
-    throw new Error("Invalid login response");
+// Добавляем токен к запросам
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("token");
+    if (token) config.headers.Authorization = `Bearer ${token}`;
   }
+  return config;
+});
 
+// ========== AUTH ==========
 
-  localStorage.setItem("token", res.data.token);
-  document.cookie = `token=${res.data.token}; path=/; SameSite=Lax`;
+export async function register(email: string, password: string): Promise<User> {
+  const { data } = await api.post<{ user: User; token: string }>(
+    "/auth/register",
+    { email, password }
+  );
+  localStorage.setItem("token", data.token);
+  document.cookie = `token=${data.token}; Path=/; SameSite=Lax`;
+  return data.user;
+}
 
-  return res.data.user;
-};
+export async function login(email: string, password: string): Promise<User> {
+  const { data } = await api.post<{ user: User; token: string }>(
+    "/auth/login",
+    { email, password }
+  );
+  localStorage.setItem("token", data.token);
+  document.cookie = `token=${data.token}; Path=/; SameSite=Lax`;
+  return data.user;
+}
 
-
-
-export type RegisterRequest = {
-  email: string;
-  password: string;
-};
-
-export const register = async (data: RegisterRequest): Promise<User> => {
-  const res = await nextServer.post<LoginResponse>("/auth/register", data);
-
-  if (!res.data?.token || !res.data?.user) {
-    throw new Error("Invalid registration response");
-  }
-
-  localStorage.setItem("token", res.data.token);
-  document.cookie = `token=${res.data.token}; path=/; SameSite=Lax`;
-
-  return res.data.user;
-};
-
-
-
-export const logout = async (): Promise<void> => {
-  await nextServer.post("/auth/logout");
-  localStorage.removeItem("token");
-  document.cookie = "token=; Max-Age=0; path=/; SameSite=Lax";
-};
-
-
-export const getMe = async (): Promise<User | null> => {
+export async function logout(): Promise<void> {
   try {
-    const res = await nextServer.get<User>("/users/me");
-    return res.data;
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  } catch (error) {
+    await api.post("/auth/logout", {}); 
+  } catch (_) {}
+
+  localStorage.removeItem("token");
+  document.cookie = "token=; Max-Age=0; Path=/";
+}
+
+export async function checkSession() {
+  try {
+    const { data } = await api.get("/auth/session");
+    return data;
+  } catch {
     return null;
   }
-};
+}
 
+export async function getMe(): Promise<User | null> {
+  try {
+    const { data } = await api.get<User>("/users/me");
+    return data;
+  } catch {
+    return null;
+  }
+}
 
-export type UpdateUserRequest = {
-  username?: string;
-  avatar?: string;
-};
+export async function updateMe(payload: { username?: string; avatar?: string }) {
+  const { data } = await api.patch("/users/me", payload ?? {});
+  return data;
+}
 
-export const updateMe = async (payload: UpdateUserRequest): Promise<User> => {
-  const res = await nextServer.patch<User>("/users/me", payload);
-  return res.data;
-};
+// ========== UPLOAD IMAGE ==========
 
+export async function uploadImage(file: File): Promise<string> {
+  const formData = new FormData();
+  formData.append("avatar", file);
 
-export const checkSession = async () => {
-  const res = await nextServer.get("/auth/session");
-  return res.data;
-};
+  const { data } = await api.post<{ url: string }>("/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+  });
+  return data.url;
+}
 
+// ========== NOTES ==========
 
-export type FetchNotesParams = {
+export async function fetchNotes(params: {
   query?: string;
   tag?: string;
   page?: number;
   perPage?: number;
-  currentPage?: number;
-};
+}): Promise<{ notes: Note[]; totalPages: number }> {
+  const res = await api.get("/notes", {
+    params: {
+      search: params.query,
+      tag: params.tag,
+      page: params.page,
+      perPage: params.perPage ?? 12,
+    },
+  });
 
-export const fetchNotes = async (
-  params: FetchNotesParams
-): Promise<{ notes: Note[]; totalPages: number }> => {
-  const res = await nextServer.get<{ notes: Note[]; totalPages: number }>(
-    "/notes",
-    {
-      params: {
-        search: params.query || undefined,
-        tag: params.tag || undefined,
-        page: params.page || 1,
-        perPage: params.perPage || 12,
-      },
-    }
+  return res.data;
+}
+
+export async function fetchNoteById(id: string): Promise<Note> {
+  const res = await api.get(`/notes/${id}`);
+  return res.data;
+}
+
+export async function createNote(newNoteData: NewNoteData): Promise<Note> {
+  const res = await api.post("/notes", newNoteData);
+  return res.data;
+}
+
+export async function deleteNote(id: string): Promise<Note> {
+  const res = await api.delete(`/notes/${id}`);
+  return res.data;
+}
+
+// Unified error extraction
+export function extractApiError(error: unknown): string {
+  const err = error as ApiError;
+  return (
+    err?.response?.data?.error ??
+    err?.message ??
+    "Oops... something went wrong"
   );
-
-  return res.data;
-};
-
-export const fetchNoteById = async (id: string): Promise<Note> => {
-  const res = await nextServer.get<Note>(`/notes/${id}`);
-  return res.data;
-};
-
-export const createNote = async (newNoteData: NewNoteData): Promise<Note> => {
-  const res = await nextServer.post<Note>("/notes", newNoteData);
-  return res.data;
-};
-
-export const deleteNote = async (id: string): Promise<Note> => {
-  const res = await nextServer.delete<Note>(`/notes/${id}`);
-  return res.data;
-};
+}

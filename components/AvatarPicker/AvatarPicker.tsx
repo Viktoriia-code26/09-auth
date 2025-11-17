@@ -1,19 +1,32 @@
 "use client";
 
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import Image from "next/image";
+import { uploadImage } from "@/lib/api/clientApi";
 
 type Props = {
-  profilePhotoUrl?: string;
-  onChangePhoto: (file: File | null) => void;
+  profilePhotoUrl?: string | null;
+  onChangePhoto: (url: string | null) => void;
 };
 
 export default function AvatarPicker({ profilePhotoUrl, onChangePhoto }: Props) {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [uploading, setUploading] = useState(false);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0] ?? null;
-    onChangePhoto(file);
+    if (!file) return;
+
+    try {
+      setUploading(true);
+      const url = await uploadImage(file);
+      onChangePhoto(url);
+    } catch (e) {
+      console.error("Avatar upload failed:", e);
+      onChangePhoto(null);
+    } finally {
+      setUploading(false);
+    }
   };
 
   return (
@@ -26,26 +39,20 @@ export default function AvatarPicker({ profilePhotoUrl, onChangePhoto }: Props) 
             width={120}
             height={120}
             loading="eager"
-            style={{ borderRadius: "50%", objectFit: "cover" }}
+            className="rounded-full object-cover"
           />
         ) : (
-          <div
-            style={{
-              width: 120,
-              height: 120,
-              borderRadius: "50%",
-              backgroundColor: "#ddd",
-            }}
-          />
+          <div className="rounded-full bg-gray-300" style={{ width: 120, height: 120 }} />
         )}
       </div>
 
       <button
         type="button"
         onClick={() => fileInputRef.current?.click()}
-        className="px-3 py-1 rounded bg-blue-500 text-white text-sm"
+        className="px-3 py-1 rounded bg-blue-500 text-white text-sm disabled:opacity-60"
+        disabled={uploading}
       >
-        Change photo
+        {uploading ? "Uploading..." : "Change photo"}
       </button>
 
       <input
