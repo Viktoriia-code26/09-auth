@@ -4,31 +4,26 @@ import { useState } from "react";
 import { register, RegisterRequest } from "@/lib/api/clientApi";
 import { useRouter } from "next/navigation";
 import css from "./SignUpPage.module.css";
-import { ApiError } from '@/app/api/api'
 import { useAuthStore } from "@/lib/store/authStore";
+import { ApiError } from "@/lib/api/api";
 
 const SignUp = () => {
   const router = useRouter();
-  const [error, setError] = useState('');
-  const setUser = useAuthStore((state) => state.setUser)
-
+  const [error, setError] = useState("");
+  const setUser = useAuthStore((state) => state.setUser);
 
   const handleSubmit = async (formData: FormData) => {
     try {
-      const formValues = Object.fromEntries(formData) as RegisterRequest;
-      const res = await register(formValues);
-      if (res) {
-	      setUser(res)
-        router.push('/profile');
-      } else {
-        setError('Invalid email or password');
-      }
-    } catch (error) {
+      const { email, password } = Object.fromEntries(formData) as RegisterRequest;
+      const user = await register(email, password);
+
+      setUser(user);
+      router.push("/profile");
+    } catch (err) {
+      const e = err as ApiError;
       setError(
-        (error as ApiError).response?.data?.error ??
-          (error as ApiError).message ??
-          'Oops... some error'
-      )
+        e?.response?.data?.error ?? e?.message ?? "Oops... some error"
+      );
     }
   };
 
@@ -48,9 +43,11 @@ const SignUp = () => {
         </label>
 
         <button className={css.submitButton}>Register</button>
+
         {error && <p className={css.error}>{error}</p>}
       </form>
     </main>
   );
-}
+};
+
 export default SignUp;
