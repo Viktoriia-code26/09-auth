@@ -41,13 +41,13 @@ export default async function RootLayout({
   children: React.ReactNode;
   modal: React.ReactNode;
 }) {
-  const user = await getServerMe();
+  await getServerMe();
 
   return (
     <html lang="en">
       <body className={roboto.variable}>
         <TanStackProvider>
-          <AuthProvider ssrUser={user}>
+          <AuthProvider>
             <Header />
             <main>
               {children}
