@@ -6,7 +6,7 @@ import { api, ApiError } from "./api";
 import type { User } from "@/types/user";
 import type { Note, NewNoteData } from "@/types/note";
 
-// Добавляем токен к запросам
+
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("token");
@@ -26,6 +26,10 @@ export async function register(email: string, password: string): Promise<User> {
   document.cookie = `token=${data.token}; Path=/; SameSite=Lax`;
   return data.user;
 }
+export type LoginRequest = {
+  email: string;
+  password: string;
+};
 
 export async function login(email: string, password: string): Promise<User> {
   const { data } = await api.post<{ user: User; token: string }>(
@@ -39,13 +43,12 @@ export async function login(email: string, password: string): Promise<User> {
 
 export async function logout(): Promise<void> {
   try {
-    await api.post("/auth/logout", {}); 
+    await api.post("/auth/logout"); 
   } catch (_) {}
 
   localStorage.removeItem("token");
   document.cookie = "token=; Max-Age=0; Path=/";
 }
-
 export async function checkSession() {
   try {
     const { data } = await api.get("/auth/session");

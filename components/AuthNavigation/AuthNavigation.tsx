@@ -37,8 +37,10 @@ export default function AuthNavigation() {
       <li className={css.navigationItem}>
         <Link href="/profile" className={css.navigationLink}>
           {user?.avatar ? (
-            <img src={user.avatar} alt="avatar" style={{ width: 32, height: 32, borderRadius: "50%" }} />
-          ) : "Profile"}
+            <img src={user.avatar} alt="avatar" style={{ width: 32, height: 32, borderRadius: "50%" }}/>
+          ) : (
+            "Profile"
+          )}
         </Link>
       </li>
 
@@ -51,4 +53,3 @@ export default function AuthNavigation() {
     </>
   );
 }
-

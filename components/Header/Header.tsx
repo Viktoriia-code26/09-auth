@@ -1,3 +1,4 @@
+// components/Header/Header.tsx
 "use client";
 
 import Link from "next/link";
@@ -24,6 +25,6 @@ const Header = () => {
       </nav>
     </header>
   );
-}
+};
 
 export default Header;
