@@ -1,112 +1,94 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { getMe, updateMe } from "@/lib/api/clientApi";
-import { useAuthStore } from "@/lib/store/authStore";
-import type { User } from "@/types/user";
+import css from "./ProfileEditPage.module.css";
+
 import AvatarPicker from "@/components/AvatarPicker/AvatarPicker";
-import css from "./EditProfilePage.module.css";
+import { uploadImage, updateMe } from "@/lib/api/clientApi";
+import { useAuthStore } from "@/lib/store/authStore";
 
-export default function EditProfilePage() {
+export default function ProfileEditPage() {
   const router = useRouter();
+  const { user, setUser } = useAuthStore();
 
-  const setUser = useAuthStore((s) => s.setUser);
-
-  const [user, setUserLocal] = useState<User | null>(null);
-  const [username, setUsername] = useState("");
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [username, setUsername] = useState(user?.username ?? "");
   const [imageFile, setImageFile] = useState<File | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const loadUser = async () => {
-      const current = await getMe();
-      if (!current) {
-        router.push("/sign-in");
-        return;
-      }
-      setUserLocal(current);
-      setUsername(current.username ?? "");
-    };
-
-    loadUser();
-  }, [router]);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar ?? null);
+  
+  if (!user) return <p className={css.loading}>Loading...</p>;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
-
-    setIsSaving(true);
+    setLoading(true);
     setError("");
 
     try {
-      const updatedUser = await updateMe({
-        username,
-      });
+      const payload: { username?: string; avatar?: string } = {};
 
-      setUser(updatedUser);
+      if (username && username !== user.username) {
+        payload.username = username;
+      }
+
+      if (imageFile) {
+        const url = await uploadImage(imageFile);
+        payload.avatar = url;
+      }
+
+      if (Object.keys(payload).length > 0) {
+        const updatedUser = await updateMe(payload);
+        setUser(updatedUser);
+      }
 
       router.push("/profile");
     } catch (err) {
-      console.error("Update profile error:", err);
-      setError("Не удалось сохранить изменения");
+      setError("Failed to update profile. Please try again.");
     } finally {
-      setIsSaving(false);
+      setLoading(false);
     }
   };
 
-  if (!user) {
-    return (
-      <main className={css.mainContent}>
-        <p>Loading profile...</p>
-      </main>
-    );
-  }
-
   return (
-    <main className={css.mainContent}>
-      <div className={css.profileCard}>
-        <h1 className={css.formTitle}>Edit Profile</h1>
+    <main className={css.container}>
+      <h1 className={css.title}>Edit Profile</h1>
 
-        <AvatarPicker
-          profilePhotoUrl={user.avatar ?? undefined}
-          onChangePhoto={setImageFile}
-        />
-
+      <section className={css.editor}>
+     <AvatarPicker
+  profilePhotoUrl={avatarUrl ?? undefined}
+  onChangePhoto={setAvatarUrl}
+/>
         <form className={css.profileInfo} onSubmit={handleSubmit}>
-          <div className={css.usernameWrapper}>
-            <label htmlFor="username">Username:</label>
+          <label className={css.label}>
+            Username
             <input
-              id="username"
               type="text"
               className={css.input}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              minLength={2}
-              required
             />
-          </div>
-
-          <p>Email: {user.email}</p>
+          </label>
 
           {error && <p className={css.error}>{error}</p>}
 
           <div className={css.actions}>
-            <button type="submit" className={css.saveButton} disabled={isSaving}>
-              {isSaving ? "Saving..." : "Save"}
-            </button>
             <button
               type="button"
-              className={css.cancelButton}
-              onClick={() => router.push("/profile")}
+              className={css.cancel}
+              onClick={() => router.back()}
+              disabled={loading}
             >
               Cancel
             </button>
+
+            <button type="submit" className={css.save} disabled={loading}>
+              {loading ? "Saving..." : "Save changes"}
+            </button>
           </div>
         </form>
-      </div>
+      </section>
     </main>
   );
 }
