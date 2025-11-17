@@ -3,8 +3,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import css from "./ProfileEditPage.module.css";
-
+import css from "./EditProfilePage.module.css"
 import AvatarPicker from "@/components/AvatarPicker/AvatarPicker";
 import { uploadImage, updateMe } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
