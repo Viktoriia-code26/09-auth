@@ -16,7 +16,11 @@ api.interceptors.request.use((config) => {
 });
 
 // ========== AUTH ==========
-
+export type RegisterRequest = {
+  email: string;
+  password: string;
+  userName: string;
+};
 export async function register(email: string, password: string): Promise<User> {
   const { data } = await api.post<{ user: User; token: string }>(
     "/auth/register",
