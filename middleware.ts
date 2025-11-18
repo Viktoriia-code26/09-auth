@@ -1,19 +1,36 @@
 // middleware.ts
 import { NextRequest, NextResponse } from "next/server";
 
-const protectedRoutes = ["/profile"];
+const PUBLIC_ROUTES = ["/sign-in", "/sign-up"];
+const PROTECTED_ROUTES = ["/profile", "/notes"];
 
 export function middleware(req: NextRequest) {
-  const token = req.cookies.get("token")?.value;
-  const path = req.nextUrl.pathname;
+  const { pathname } = req.nextUrl;
+  const accessToken = req.cookies.get("accessToken")?.value;
 
-  if (protectedRoutes.some((r) => path.startsWith(r)) && !token) {
+  const isPublic = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  const isProtected = PROTECTED_ROUTES.some((route) =>
+    pathname.startsWith(route)
+  );
+
+  if (isPublic) {
+    return NextResponse.next();
+  }
+
+
+  if (isProtected && !accessToken) {
     return NextResponse.redirect(new URL("/sign-in", req.url));
   }
+
 
   return NextResponse.next();
 }
 
 export const config = {
-  matcher: ["/profile/:path*"],
+  matcher: [
+    "/profile/:path*",
+    "/notes/:path*",
+    "/sign-in",
+    "/sign-up",
+  ],
 };

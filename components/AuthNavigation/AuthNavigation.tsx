@@ -31,7 +31,6 @@ export default function AuthNavigation() {
       </>
     );
   }
-
   return (
     <>
    <li className={css.navigationItem}>

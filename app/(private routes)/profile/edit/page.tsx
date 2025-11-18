@@ -6,30 +6,28 @@ import { useRouter } from "next/navigation";
 import css from "./EditProfilePage.module.css";
 import { uploadImage, updateMe } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
-import Image from "next/image"
+import Image from "next/image";
 
 export default function ProfileEditPage() {
   const router = useRouter();
   const { user, setUser } = useAuthStore();
 
   const [username, setUsername] = useState(user?.username ?? "");
-  const [imageFile, setImageFile] = useState<File | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar ?? null);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [error, setError] = useState("");
 
   if (!user) return <p className={css.loading}>Loading...</p>;
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    setError("");
-
+  const handleSubmit = async (formData: FormData) => {
     try {
+      setError("");
+      const newUsername = formData.get("username") as string;
+
       const payload: { username?: string; avatar?: string } = {};
 
-      if (username && username !== user.username) {
-        payload.username = username;
+      if (newUsername && newUsername !== user.username) {
+        payload.username = newUsername;
       }
 
       if (imageFile) {
@@ -43,10 +41,8 @@ export default function ProfileEditPage() {
       }
 
       router.push("/profile");
-    } catch (err) {
+    } catch {
       setError("Failed to update profile. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -55,19 +51,21 @@ export default function ProfileEditPage() {
       <div className={css.profileCard}>
         <h1 className={css.formTitle}>Edit Profile</h1>
 
-       <Image
-  src={avatarUrl ?? "/default-avatar.png"}
-  alt={user.username ?? "User Avatar"}
-  width={120}
-  height={120}
-  className={css.avatar}
-/>
+        <Image
+          src={avatarUrl ?? "/default-avatar.png"}
+          alt={user.username ?? "User Avatar"}
+          width={120}
+          height={120}
+          className={css.avatar}
+          priority
+        />
 
-        <form className={css.profileInfo} onSubmit={handleSubmit}>
+        <form className={css.profileInfo} action={handleSubmit}>
           <div className={css.usernameWrapper}>
             <label htmlFor="username">Username:</label>
             <input
               id="username"
+              name="username"
               type="text"
               className={css.input}
               value={username}
@@ -80,15 +78,14 @@ export default function ProfileEditPage() {
           {error && <p className={css.error}>{error}</p>}
 
           <div className={css.actions}>
-            <button type="submit" className={css.saveButton} disabled={loading}>
-              {loading ? "Saving..." : "Save"}
+            <button type="submit" className={css.saveButton}>
+              Save
             </button>
 
             <button
               type="button"
               className={css.cancelButton}
               onClick={() => router.push("/profile")}
-              disabled={loading}
             >
               Cancel
             </button>

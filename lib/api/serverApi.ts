@@ -4,17 +4,22 @@ import { cookies } from "next/headers";
 import type { User } from "@/types/user";
 import type { Note } from "@/types/note";
 
-async function buildCookieHeader() {
+// Собираем Cookie header типа: "accessToken=abc; refreshToken=xyz"
+async function buildCookieHeader(): Promise<string> {
   const cookieStore = await cookies();
-  return cookieStore.getAll().map(({ name, value }) => `${name}=${value}`).join("; ");
+  return cookieStore
+    .getAll()
+    .map((c) => `${c.name}=${c.value}`)
+    .join("; ");
 }
 
-// ======= AUTH SSR =======
+// ======== AUTH SSR ========
 
 export async function getServerMe(): Promise<User | null> {
   try {
+    const cookieHeader = await buildCookieHeader();
     const { data } = await nextServer.get("/users/me", {
-      headers: { Cookie: await buildCookieHeader() },
+      headers: { Cookie: cookieHeader },
     });
     return data;
   } catch {
@@ -22,32 +27,35 @@ export async function getServerMe(): Promise<User | null> {
   }
 }
 
-export const checkServerSession = async () => {
-  const res = await nextServer.get("/auth/session", {
-    headers: { Cookie: await buildCookieHeader() },
-  });
-  return res.data;
-};
+export async function checkServerSession(cookieHeader: string) {
+  const res = await fetch(
+    process.env.NEXT_PUBLIC_API_URL + "/api/auth/session",
+    {
+      method: "GET",
+      headers: { Cookie: cookieHeader },
+    }
+  );
 
-// ======= NOTES SSR =======
+  return res;
+}
+
+// ======== NOTES SSR ========
 
 export async function fetchNotes(params?: {
   query?: string;
   tag?: string;
-  currentPage?: number;
+  page?: number;
   perPage?: number;
 }): Promise<{ notes: Note[]; totalPages: number } | null> {
   try {
-    const res = await nextServer.get("/notes", {
-      headers: { Cookie: await buildCookieHeader() },
-      params: {
-        search: params?.query,
-        tag: params?.tag,
-        page: params?.currentPage ?? 1,
-        perPage: params?.perPage ?? 12,
-      },
+    const cookieHeader = await buildCookieHeader();
+
+    const { data } = await nextServer.get("/notes", {
+      headers: { Cookie: cookieHeader },
+      params,
     });
-    return res.data;
+
+    return data;
   } catch {
     return null;
   }
@@ -55,10 +63,13 @@ export async function fetchNotes(params?: {
 
 export async function fetchNoteById(id: string): Promise<Note | null> {
   try {
-    const res = await nextServer.get(`/notes/${id}`, {
-      headers: { Cookie: await buildCookieHeader() },
+    const cookieHeader = await buildCookieHeader();
+
+    const { data } = await nextServer.get(`/notes/${id}`, {
+      headers: { Cookie: cookieHeader },
     });
-    return res.data;
+
+    return data;
   } catch {
     return null;
   }
