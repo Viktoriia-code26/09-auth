@@ -1,4 +1,4 @@
-/* eslint-disable @next/next/no-img-element */
+
 "use client";
 
 import Link from "next/link";
@@ -34,22 +34,18 @@ export default function AuthNavigation() {
 
   return (
     <>
-      <li className={css.navigationItem}>
-        <Link href="/profile" className={css.navigationLink}>
-          {user?.avatar ? (
-            <img src={user.avatar} alt="avatar" style={{ width: 32, height: 32, borderRadius: "50%" }}/>
-          ) : (
-            "Profile"
-          )}
-        </Link>
-      </li>
+   <li className={css.navigationItem}>
+  <Link href="/profile" prefetch={false} className={css.navigationLink}>
+    Profile
+  </Link>
+</li>
 
-      <li className={css.navigationItem}>
-        <p className={css.userEmail}>{user?.email}</p>
-        <button onClick={handleLogout} className={css.logoutButton}>
-          Logout
-        </button>
-      </li>
+<li className={css.navigationItem}>
+        <p className={css.userEmail}>{user?.email }</p>
+  <button className={css.logoutButton} onClick={handleLogout} >
+    Logout
+  </button>
+</li>
     </>
   );
 }

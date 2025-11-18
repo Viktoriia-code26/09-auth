@@ -3,10 +3,10 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import css from "./EditProfilePage.module.css"
-import AvatarPicker from "@/components/AvatarPicker/AvatarPicker";
+import css from "./EditProfilePage.module.css";
 import { uploadImage, updateMe } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
+import Image from "next/image"
 
 export default function ProfileEditPage() {
   const router = useRouter();
@@ -17,7 +17,7 @@ export default function ProfileEditPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar ?? null);
-  
+
   if (!user) return <p className={css.loading}>Loading...</p>;
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -51,43 +51,50 @@ export default function ProfileEditPage() {
   };
 
   return (
-    <main className={css.container}>
-      <h1 className={css.title}>Edit Profile</h1>
+    <main className={css.mainContent}>
+      <div className={css.profileCard}>
+        <h1 className={css.formTitle}>Edit Profile</h1>
 
-      <section className={css.editor}>
-     <AvatarPicker
-  profilePhotoUrl={avatarUrl ?? undefined}
-  onChangePhoto={setAvatarUrl}
+       <Image
+  src={avatarUrl ?? "/default-avatar.png"}
+  alt={user.username ?? "User Avatar"}
+  width={120}
+  height={120}
+  className={css.avatar}
 />
+
         <form className={css.profileInfo} onSubmit={handleSubmit}>
-          <label className={css.label}>
-            Username
+          <div className={css.usernameWrapper}>
+            <label htmlFor="username">Username:</label>
             <input
+              id="username"
               type="text"
               className={css.input}
               value={username}
               onChange={(e) => setUsername(e.target.value)}
             />
-          </label>
+          </div>
+
+          <p>Email: {user.email}</p>
 
           {error && <p className={css.error}>{error}</p>}
 
           <div className={css.actions}>
+            <button type="submit" className={css.saveButton} disabled={loading}>
+              {loading ? "Saving..." : "Save"}
+            </button>
+
             <button
               type="button"
-              className={css.cancel}
-              onClick={() => router.back()}
+              className={css.cancelButton}
+              onClick={() => router.push("/profile")}
               disabled={loading}
             >
               Cancel
             </button>
-
-            <button type="submit" className={css.save} disabled={loading}>
-              {loading ? "Saving..." : "Save changes"}
-            </button>
           </div>
         </form>
-      </section>
+      </div>
     </main>
   );
 }

@@ -1,5 +1,5 @@
 // lib/api/serverApi.ts
-import { api } from "./api";
+import { nextServer } from "./api";
 import { cookies } from "next/headers";
 import type { User } from "@/types/user";
 import type { Note } from "@/types/note";
@@ -13,7 +13,7 @@ async function buildCookieHeader() {
 
 export async function getServerMe(): Promise<User | null> {
   try {
-    const { data } = await api.get("/users/me", {
+    const { data } = await nextServer.get("/users/me", {
       headers: { Cookie: await buildCookieHeader() },
     });
     return data;
@@ -23,7 +23,7 @@ export async function getServerMe(): Promise<User | null> {
 }
 
 export const checkServerSession = async () => {
-  const res = await api.get("/auth/session", {
+  const res = await nextServer.get("/auth/session", {
     headers: { Cookie: await buildCookieHeader() },
   });
   return res.data;
@@ -38,7 +38,7 @@ export async function fetchNotes(params?: {
   perPage?: number;
 }): Promise<{ notes: Note[]; totalPages: number } | null> {
   try {
-    const res = await api.get("/notes", {
+    const res = await nextServer.get("/notes", {
       headers: { Cookie: await buildCookieHeader() },
       params: {
         search: params?.query,
@@ -55,7 +55,7 @@ export async function fetchNotes(params?: {
 
 export async function fetchNoteById(id: string): Promise<Note | null> {
   try {
-    const res = await api.get(`/notes/${id}`, {
+    const res = await nextServer.get(`/notes/${id}`, {
       headers: { Cookie: await buildCookieHeader() },
     });
     return res.data;

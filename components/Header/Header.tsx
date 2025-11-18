@@ -20,7 +20,7 @@ const Header = () => {
           <li>
             <Link href="/notes/filter/all" prefetch={false}>Notes</Link>
           </li>
-          <AuthNavigation />
+          <AuthNavigation/>
         </ul>
       </nav>
     </header>

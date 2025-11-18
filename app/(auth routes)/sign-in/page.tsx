@@ -26,20 +26,25 @@ const SignIn = () => {
 
   return (
     <main className={css.mainContent}>
-      <h1 className={css.formTitle}>Sign In</h1>
-
       <form className={css.form} action={handleSubmit}>
+        <h1 className={css.formTitle}>Sign In</h1>
+
         <label className={css.formGroup}>
           Email
-          <input type="email" name="email" required className={css.input} />
+          <input id="email" type="email" name="email" className={css.input} required />
         </label>
 
         <label className={css.formGroup}>
           Password
-          <input type="password" name="password" required className={css.input} />
+          <input id="password" type="password" name="password" className={css.input} required />
         </label>
 
-        <button className={css.submitButton}>Log in</button>
+        <div className={css.actions}>
+          <button type="submit" className={css.submitButton}>
+            Log in
+          </button>
+        </div>
+
         {error && <p className={css.error}>{error}</p>}
       </form>
     </main>

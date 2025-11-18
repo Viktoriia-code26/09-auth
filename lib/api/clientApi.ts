@@ -2,12 +2,13 @@
 // lib/api/clientApi.ts
 "use client";
 
-import { api, ApiError } from "./api";
+import { nextServer } from "./api";
 import type { User } from "@/types/user";
 import type { Note, NewNoteData } from "@/types/note";
+import { ApiError } from "@/app/api/api";
 
 
-api.interceptors.request.use((config) => {
+nextServer.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
     const token = localStorage.getItem("token");
     if (token) config.headers.Authorization = `Bearer ${token}`;
@@ -22,7 +23,7 @@ export type RegisterRequest = {
   userName: string;
 };
 export async function register(email: string, password: string): Promise<User> {
-  const { data } = await api.post<{ user: User; token: string }>(
+  const { data } = await nextServer.post<{ user: User; token: string }>(
     "/auth/register",
     { email, password }
   );
@@ -36,7 +37,7 @@ export type LoginRequest = {
 };
 
 export async function login(email: string, password: string): Promise<User> {
-  const { data } = await api.post<{ user: User; token: string }>(
+  const { data } = await nextServer.post<{ user: User; token: string }>(
     "/auth/login",
     { email, password }
   );
@@ -47,7 +48,7 @@ export async function login(email: string, password: string): Promise<User> {
 
 export async function logout(): Promise<void> {
   try {
-    await api.post("/auth/logout"); 
+    await nextServer.post("/auth/logout"); 
   } catch (_) {}
 
   localStorage.removeItem("token");
@@ -55,7 +56,7 @@ export async function logout(): Promise<void> {
 }
 export async function checkSession() {
   try {
-    const { data } = await api.get("/auth/session");
+    const { data } = await nextServer.get("/auth/session");
     return data;
   } catch {
     return null;
@@ -64,7 +65,7 @@ export async function checkSession() {
 
 export async function getMe(): Promise<User | null> {
   try {
-    const { data } = await api.get<User>("/users/me");
+    const { data } = await nextServer.get<User>("/users/me");
     return data;
   } catch {
     return null;
@@ -72,7 +73,7 @@ export async function getMe(): Promise<User | null> {
 }
 
 export async function updateMe(payload: { username?: string; avatar?: string }) {
-  const { data } = await api.patch("/users/me", payload ?? {});
+  const { data } = await nextServer.patch("/users/me", payload ?? {});
   return data;
 }
 
@@ -82,7 +83,7 @@ export async function uploadImage(file: File): Promise<string> {
   const formData = new FormData();
   formData.append("avatar", file);
 
-  const { data } = await api.post<{ url: string }>("/upload", formData, {
+  const { data } = await nextServer.post<{ url: string }>("/upload", formData, {
     headers: { "Content-Type": "multipart/form-data" },
   });
   return data.url;
@@ -96,7 +97,7 @@ export async function fetchNotes(params: {
   page?: number;
   perPage?: number;
 }): Promise<{ notes: Note[]; totalPages: number }> {
-  const res = await api.get("/notes", {
+  const res = await nextServer.get("/notes", {
     params: {
       search: params.query,
       tag: params.tag,
@@ -109,17 +110,17 @@ export async function fetchNotes(params: {
 }
 
 export async function fetchNoteById(id: string): Promise<Note> {
-  const res = await api.get(`/notes/${id}`);
+  const res = await nextServer.get(`/notes/${id}`);
   return res.data;
 }
 
 export async function createNote(newNoteData: NewNoteData): Promise<Note> {
-  const res = await api.post("/notes", newNoteData);
+  const res = await nextServer.post("/notes", newNoteData);
   return res.data;
 }
 
 export async function deleteNote(id: string): Promise<Note> {
-  const res = await api.delete(`/notes/${id}`);
+  const res = await nextServer.delete(`/notes/${id}`);
   return res.data;
 }
 

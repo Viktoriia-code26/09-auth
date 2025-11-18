@@ -1,27 +1,41 @@
 /* eslint-disable @next/next/no-img-element */
 import { getServerMe } from "@/lib/api/serverApi";
 import Link from "next/link";
+import css from "./ProfilePage.module.css";
 
 export default async function ProfilePage() {
   const user = await getServerMe();
   if (!user) return null;
 
   return (
-    <main style={{ padding: 24 }}>
-      <h1>My Profile</h1>
+    <main className={css.mainContent}>
+      <div className={css.profileCard}>
+        <div className={css.header}>
+          <h1 className={css.formTitle}>Profile Page</h1>
+          <Link href="/profile/edit" className={css.editProfileButton}>
+            Edit Profile
+          </Link>
+        </div>
 
-      {user.avatar && (
-        <img
-          src={user.avatar}
-          alt="avatar"
-          style={{ width: 120, height: 120, borderRadius: "50%" }}
-        />
-      )}
+        <div className={css.avatarWrapper}>
+          <img
+            src={user.avatar ?? "/default-avatar.png"}
+            alt={user.username ?? "User Avatar"}
+            width={120}
+            height={120}
+            className={css.avatar}
+          />
+        </div>
 
-      <p>Email: {user.email}</p>
-      <p>Username: {user.username}</p>
-
-      <Link href="/profile/edit">Edit profile</Link>
+        <div className={css.profileInfo}>
+          <p className={css.userWrapper}>
+            <strong>Username:</strong> {user.username}
+          </p>
+          <p className={css.userWrapper}>
+            <strong>Email:</strong> {user.email}
+          </p>
+        </div>
+      </div>
     </main>
   );
 }
