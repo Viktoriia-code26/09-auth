@@ -48,19 +48,21 @@ export async function fetchNotes(params?: {
   perPage?: number;
 }): Promise<{ notes: Note[]; totalPages: number } | null> {
   try {
-    const cookieHeader = await buildCookieHeader();
-
-    const { data } = await nextServer.get("/notes", {
-      headers: { Cookie: cookieHeader },
-      params,
+    const res = await nextServer.get("/notes", {
+      headers: { Cookie: await buildCookieHeader() },
+      params: {
+        search: params?.query,
+        tag: params?.tag,
+        page: params?.page ?? 1,
+        perPage: params?.perPage ?? 12,
+      },
     });
 
-    return data;
+    return res.data;
   } catch {
     return null;
   }
 }
-
 export async function fetchNoteById(id: string): Promise<Note | null> {
   try {
     const cookieHeader = await buildCookieHeader();

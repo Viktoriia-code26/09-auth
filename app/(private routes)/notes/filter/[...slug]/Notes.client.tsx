@@ -24,6 +24,8 @@ export default function NotesClient({ initialTag }: NotesClientProps) {
   const [debouncedSearch] = useDebounce(searchTerm, 600);
   const [currentPage, setCurrentPage] = useState(1);
   const [tag, setTag] = useState<string>(initialTag || "all");
+   // eslint-disable-next-line @typescript-eslint/no-unused-vars
+   const [page, setPage] = useState(1);
 
   useEffect(() => {
     if (initialTag) {
@@ -39,13 +41,13 @@ export default function NotesClient({ initialTag }: NotesClientProps) {
     setCurrentPage(1);
   };
 
- const { data, isLoading, error, isFetching } = useQuery({
-  queryKey: ["notes", debouncedSearch, tag, currentPage],
+const { data, isLoading, error, isFetching } = useQuery({
+  queryKey: ["notes", debouncedSearch, tag, page],
   queryFn: () =>
     fetchNotes({
       query: debouncedSearch,
       tag: tag === "all" ? undefined : tag,
-      page: currentPage, 
+      page,
     }),
   placeholderData: keepPreviousData,
 });

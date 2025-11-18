@@ -108,8 +108,16 @@ export async function fetchNotes(params: {
   page?: number;
   perPage?: number;
 }): Promise<{ notes: Note[]; totalPages: number }> {
-  const { data } = await nextServer.get("/notes", { params });
-  return data;
+  const res = await nextServer.get("/notes", {
+    params: {
+      search: params.query,
+      tag: params.tag,
+      page: params.page ?? 1,
+      perPage: params.perPage ?? 12,
+    },
+  });
+
+  return res.data;
 }
 
 export async function fetchNoteById(id: string): Promise<Note> {

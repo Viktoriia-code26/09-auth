@@ -20,3 +20,9 @@ export interface NoteUpdateData {
     content?: string;
     tag?: NoteTag;
 }
+export type NotesQuery = {
+  query?: string;
+  tag?: string;
+  page?: number;
+  perPage?: number;
+};

@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link";
@@ -13,38 +12,48 @@ export default function AuthNavigation() {
 
   if (loading) return null;
 
+  const handleProfileClick = (e: React.MouseEvent) => {
+    e.preventDefault();
+
+    if (!isAuthenticated) {
+      router.push("/sign-in");
+      return;
+    }
+
+    router.push("/profile");
+  };
+
   const handleLogout = async () => {
     await logout();
     clearAuth();
     router.push("/sign-in");
   };
 
-  if (!isAuthenticated) {
-    return (
-      <>
-        <li className={css.navigationItem}>
-          <Link href="/sign-in" className={css.navigationLink}>Login</Link>
-        </li>
-        <li className={css.navigationItem}>
-          <Link href="/sign-up" className={css.navigationLink}>Sign up</Link>
-        </li>
-      </>
-    );
-  }
   return (
     <>
-   <li className={css.navigationItem}>
-  <Link href="/profile" prefetch={false} className={css.navigationLink}>
-    Profile
-  </Link>
-</li>
+      <li className={css.navigationItem}>
+        <Link href="#" onClick={handleProfileClick} className={css.navigationLink}>
+          Profile
+        </Link>
+      </li>
 
-<li className={css.navigationItem}>
-        <p className={css.userEmail}>{user?.email }</p>
-  <button className={css.logoutButton} onClick={handleLogout} >
-    Logout
-  </button>
-</li>
+      {!isAuthenticated ? (
+        <>
+          <li className={css.navigationItem}>
+            <Link href="/sign-in" className={css.navigationLink}>Login</Link>
+          </li>
+          <li className={css.navigationItem}>
+            <Link href="/sign-up" className={css.navigationLink}>Sign up</Link>
+          </li>
+        </>
+      ) : (
+        <li className={css.navigationItem}>
+          <span className={css.userEmail}>{user?.email}</span>
+          <button className={css.logoutButton} onClick={handleLogout}>
+            Logout
+          </button>
+        </li>
+      )}
     </>
   );
 }
