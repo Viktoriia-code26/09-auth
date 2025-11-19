@@ -27,16 +27,17 @@ export const metadata: Metadata = {
 export default async function NotesPage() {
   const queryClient = new QueryClient();
 
-  await queryClient.prefetchQuery({
-    queryKey: ["notes", { query: "", tag: "", page: 1, perPage: 12 }],
-    queryFn: () =>
-      fetchNotes({
-        query: "",
-        tag: "",
-        currentPage: 1,
-        perPage: 12,
-      }),
-  });
+await queryClient.prefetchQuery({
+  queryKey: ["notes", { query: "", tag: "", page: 1, perPage: 12 }],
+  queryFn: () =>
+    fetchNotes({
+      query: "",
+      tag: "",
+      page: 1,       
+      perPage: 12,
+    }),
+});
+
 
   const dehydratedState = dehydrate(queryClient);
 
