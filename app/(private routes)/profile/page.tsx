@@ -37,7 +37,7 @@ export default async function ProfilePage() {
 
         <div className={css.profileInfo}>
           <p className={css.userWrapper}>
-            <strong>Username:</strong> {user.username}
+           <strong>Username:</strong> {user.username}
           </p>
           <p className={css.userWrapper}>
             <strong>Email:</strong> {user.email}

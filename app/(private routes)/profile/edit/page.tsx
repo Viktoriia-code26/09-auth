@@ -20,31 +20,32 @@ export default function ProfileEditPage() {
   if (!user) return <p className={css.loading}>Loading...</p>;
 
   const handleSubmit = async (formData: FormData) => {
-    try {
-      setError("");
-      const newUsername = formData.get("username") as string;
+  try {
+    setError("");
 
-      const payload: { username?: string; avatar?: string } = {};
+    const newUsername = (formData.get("username") as string).trim();
+    const payload: { username?: string; avatar?: string } = {};
 
-      if (newUsername && newUsername !== user.username) {
+  
+    if (newUsername && newUsername !== user.username) {
         payload.username = newUsername;
       }
 
-      if (imageFile) {
-        const url = await uploadImage(imageFile);
-        payload.avatar = url;
-      }
-
-      if (Object.keys(payload).length > 0) {
-        const updatedUser = await updateMe(payload);
-        setUser(updatedUser);
-      }
-
-      router.push("/profile");
-    } catch {
-      setError("Failed to update profile. Please try again.");
+    if (imageFile) {
+      const url = await uploadImage(imageFile);
+      payload.avatar = url;
     }
-  };
+
+    if (Object.keys(payload).length > 0) {
+      const updatedUser = await updateMe(payload);
+      setUser(updatedUser);
+    }
+
+    router.push("/profile");
+  } catch {
+    setError("Failed to update profile. Please try again.");
+  }
+};
 
   return (
     <main className={css.mainContent}>
@@ -52,7 +53,7 @@ export default function ProfileEditPage() {
         <h1 className={css.formTitle}>Edit Profile</h1>
 
         <Image
-          src={avatarUrl ?? "/default-avatar.png"}
+          src={user.avatar ?? "/default-avatar.png"}
           alt={user.username ?? "User Avatar"}
           width={120}
           height={120}
