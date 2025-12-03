@@ -31,7 +31,7 @@ export async function getServerMe(): Promise<User | null> {
 }
 
 
-export async function checkSession() {
+export async function checkServerSession() {
   const cookieHeader = await buildCookieHeader();
 
   return nextServer.get("/auth/session", {

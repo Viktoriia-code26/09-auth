@@ -11,7 +11,7 @@ export interface Note {
 
 export interface NewNoteData {
   title: string;
-  content: string;
+  content?: string;
   tag: NoteTag;
 }
 export interface NoteUpdateData {

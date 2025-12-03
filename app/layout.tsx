@@ -54,6 +54,7 @@ export default async function RootLayout({
             <main>
               {children}
               {modal}
+               <div id="modal-root"></div>
             </main>
             <Footer />
           </AuthProvider>

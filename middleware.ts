@@ -1,4 +1,6 @@
 import { NextResponse, NextRequest } from "next/server";
+import { cookies } from "next/headers";
+import { checkServerSession } from "@/lib/api/serverApi";
 
 const PUBLIC_ROUTES = ["/sign-in", "/sign-up"];
 const PROTECTED_ROUTES = ["/profile", "/notes"];
@@ -6,33 +8,35 @@ const PROTECTED_ROUTES = ["/profile", "/notes"];
 export async function middleware(req: NextRequest) {
   const { pathname } = req.nextUrl;
 
-  const accessToken = req.cookies.get("accessToken")?.value;
-  const refreshToken = req.cookies.get("refreshToken")?.value;
+  const cookieStore = await cookies();
 
-  const isPublic = PUBLIC_ROUTES.some(route => pathname.startsWith(route));
-  const isProtected = PROTECTED_ROUTES.some(route => pathname.startsWith(route));
+  const accessToken = cookieStore.get("accessToken")?.value;
+  const refreshToken = cookieStore.get("refreshToken")?.value;
+
+  const isPublic = PUBLIC_ROUTES.some((route) => pathname.startsWith(route));
+  const isProtected = PROTECTED_ROUTES.some((route) => pathname.startsWith(route));
 
   if (isPublic && accessToken) {
     return NextResponse.redirect(new URL("/", req.url));
   }
 
   if (isProtected) {
+  
     if (accessToken) return NextResponse.next();
 
     if (refreshToken) {
       try {
-        const res = await fetch("https://notehub-api.goit.study/users/current", {
-          method: "GET",
-          credentials: "include",
-          headers: { Cookie: `refreshToken=${refreshToken};` },
-        });
+        const sessionResponse = await checkServerSession();
 
-        if (res.ok) {
+        if (sessionResponse?.status === 200) {
           const response = NextResponse.next();
 
-          const setCookie = res.headers.get("set-cookie");
+          const setCookie = sessionResponse.headers["set-cookie"];
           if (setCookie) {
-            response.headers.set("set-cookie", setCookie);
+            const cookiesArray = Array.isArray(setCookie) ? setCookie : [setCookie];
+            for (const cookie of cookiesArray) {
+              response.headers.append("set-cookie", cookie);
+            }
           }
 
           return response;

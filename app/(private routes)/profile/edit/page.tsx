@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { redirect, useRouter } from "next/navigation";
+import Image from "next/image";
 import css from "./EditProfilePage.module.css";
 import { updateMe } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
@@ -44,6 +45,14 @@ export default function ProfileEditPage() {
     <main className={css.mainContent}>
       <div className={css.profileCard}>
         <h1 className={css.formTitle}>Edit Profile</h1>
+
+        <Image
+          src={user!.avatar ?? "/default-avatar.png"}
+          alt={user!.username ?? "User Avatar"}
+          width={120}
+          height={120}
+          className={css.avatar}
+        />
 
         <form
           className={css.profileInfo}

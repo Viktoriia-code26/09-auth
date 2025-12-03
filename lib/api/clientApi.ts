@@ -1,16 +1,13 @@
-// lib/api/clientApi.ts
 "use client";
 
-import { nextServer } from "./api";
+import { ApiError, nextServer } from "./api";
 import type { User } from "@/types/user";
 import type { Note, NewNoteData } from "@/types/note";
-import { ApiError } from "@/app/api/api";
 
 
 nextServer.interceptors.request.use((config) => {
   return config;
 });
-
 
 export type RegisterRequest = {
   email: string;
@@ -19,8 +16,7 @@ export type RegisterRequest = {
 };
 
 export async function register(request: RegisterRequest): Promise<User> {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const { data, headers } = await nextServer.post<{ user: User; token: string }>(
+  const { data } = await nextServer.post<{ user: User; token: string }>(
     "/auth/register",
     request,
     { withCredentials: true }
@@ -30,11 +26,7 @@ export async function register(request: RegisterRequest): Promise<User> {
 
   return data.user;
 }
-
-export type LoginRequest = {
-  email: string;
-  password: string;
-};
+export type LoginRequest = { email: string; password: string; };
 
 export async function login(email: string, password: string): Promise<User> {
   const { data } = await nextServer.post<{ user: User; token: string }>(
@@ -76,13 +68,14 @@ export async function getMe(): Promise<User | null> {
   }
 }
 
-export type UpdateUserPayload = { username?: string};
+export type UpdateUserPayload = {
+  username?: string;
+};
 
-export async function updateMe(payload: UpdateUserPayload) {
-  const { data } = await nextServer.patch("/users/me", payload);
+export async function updateMe(payload: UpdateUserPayload): Promise<User> {
+  const { data } = await nextServer.patch<User>("/users/me", payload);
   return data;
 }
-
 
 export async function fetchNotes(params: {
   query?: string;
@@ -116,7 +109,6 @@ export async function deleteNote(id: string): Promise<Note> {
   const { data } = await nextServer.delete(`/notes/${id}`);
   return data;
 }
-
 
 export function extractApiError(error: unknown): string {
   const err = error as ApiError;
