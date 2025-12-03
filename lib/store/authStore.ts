@@ -6,7 +6,7 @@ type AuthStore = {
   user: User | null;
   isAuthenticated: boolean;
   loading: boolean;
-  setUser: (user: User) => void;
+  setUser: (user: User | null) => void;
   clearAuth: () => void;
   setLoading: (value: boolean) => void;
 };

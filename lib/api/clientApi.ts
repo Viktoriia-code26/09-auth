@@ -6,16 +6,11 @@ import type { User } from "@/types/user";
 import type { Note, NewNoteData } from "@/types/note";
 import { ApiError } from "@/app/api/api";
 
-// --- Подставляем Bearer из localStorage ---
+
 nextServer.interceptors.request.use((config) => {
-  if (typeof window !== "undefined") {
-    const token = localStorage.getItem("accessToken");
-    if (token) config.headers.Authorization = `Bearer ${token}`;
-  }
   return config;
 });
 
-// ========== AUTH ==========
 
 export type RegisterRequest = {
   email: string;
@@ -81,27 +76,14 @@ export async function getMe(): Promise<User | null> {
   }
 }
 
-export type UpdateUserPayload = { username?: string; avatar?: string };
+export type UpdateUserPayload = { username?: string};
 
 export async function updateMe(payload: UpdateUserPayload) {
   const { data } = await nextServer.patch("/users/me", payload);
   return data;
 }
 
-// ========== UPLOAD ==========
-export async function uploadImage(file: File): Promise<string> {
-  const formData = new FormData();
-  formData.append("avatar", file);
 
-  const { data } = await nextServer.post<{ url: string }>("/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" },
-    withCredentials: true,
-  });
-
-  return data.url;
-}
-
-// ========== NOTES ==========
 export async function fetchNotes(params: {
   query?: string;
   tag?: string;
@@ -135,7 +117,7 @@ export async function deleteNote(id: string): Promise<Note> {
   return data;
 }
 
-// ========== ERROR UTILS ==========
+
 export function extractApiError(error: unknown): string {
   const err = error as ApiError;
   return (

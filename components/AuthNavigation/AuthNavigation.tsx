@@ -12,17 +12,6 @@ export default function AuthNavigation() {
 
   if (loading) return null;
 
-  const handleProfileClick = (e: React.MouseEvent) => {
-    e.preventDefault();
-
-    if (!isAuthenticated) {
-      router.push("/sign-in");
-      return;
-    }
-
-    router.push("/profile");
-  };
-
   const handleLogout = async () => {
     await logout();
     clearAuth();
@@ -31,26 +20,30 @@ export default function AuthNavigation() {
 
   return (
     <>
-      <li className={css.navigationItem}>
-        <Link href="#" onClick={handleProfileClick} className={css.navigationLink}>
-          Profile
-        </Link>
-      </li>
+      {isAuthenticated && (
+        <li className={css.navigationItem}>
+          <Link href="/profile" className={css.navigationLink}>
+            Profile
+          </Link>
+        </li>
+      )}
 
       {!isAuthenticated ? (
         <>
           <li className={css.navigationItem}>
-            <Link href="/sign-in" className={css.navigationLink}>Login</Link>
+            <Link href="/sign-in" className={css.navigationLink}>
+              Login
+            </Link>
           </li>
           <li className={css.navigationItem}>
-            <Link href="/sign-up" className={css.navigationLink}>Sign up</Link>
+            <Link href="/sign-up" className={css.navigationLink}>
+              Sign up
+            </Link>
           </li>
         </>
       ) : (
         <li className={css.navigationItem}>
-         <span className={css.userEmail}>
-         { user?.email}
-        </span>
+          <span className={css.userEmail}>{user?.email}</span>
           <button className={css.logoutButton} onClick={handleLogout}>
             Logout
           </button>

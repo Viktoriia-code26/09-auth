@@ -1,67 +1,57 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { redirect, useRouter } from "next/navigation";
 import css from "./EditProfilePage.module.css";
-import { uploadImage, updateMe } from "@/lib/api/clientApi";
+import { updateMe } from "@/lib/api/clientApi";
 import { useAuthStore } from "@/lib/store/authStore";
-import Image from "next/image";
 
 export default function ProfileEditPage() {
   const router = useRouter();
-  const { user, setUser } = useAuthStore();
+  const { user, loading, setUser } = useAuthStore();
 
   const [username, setUsername] = useState(user?.username ?? "");
-  const [avatarUrl, setAvatarUrl] = useState<string | null>(user?.avatar ?? null);
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [error, setError] = useState("");
 
-  if (!user) return <p className={css.loading}>Loading...</p>;
+  if (loading) return <p className={css.loading}>Loading...</p>;
+  if (!loading && !user) redirect("/sign-in");
 
-  const handleSubmit = async (formData: FormData) => {
-  try {
-    setError("");
+  const handleSubmit = async () => {
+    try {
+      setError("");
 
-    const newUsername = (formData.get("username") as string).trim();
-    const payload: { username?: string; avatar?: string } = {};
+      const trimmed = username.trim();
+      const payload: { username?: string } = {};
 
-  
-    if (newUsername && newUsername !== user.username) {
-        payload.username = newUsername;
+      if (trimmed && trimmed !== user!.username) {
+        payload.username = trimmed;
       }
 
-    if (imageFile) {
-      const url = await uploadImage(imageFile);
-      payload.avatar = url;
-    }
+      if (Object.keys(payload).length === 0) {
+        return router.push("/profile");
+      }
 
-    if (Object.keys(payload).length > 0) {
       const updatedUser = await updateMe(payload);
       setUser(updatedUser);
-    }
 
-    router.push("/profile");
-  } catch {
-    setError("Failed to update profile. Please try again.");
-  }
-};
+      router.push("/profile");
+    } catch {
+      setError("Failed to update profile. Please try again.");
+    }
+  };
 
   return (
     <main className={css.mainContent}>
       <div className={css.profileCard}>
         <h1 className={css.formTitle}>Edit Profile</h1>
 
-        <Image
-          src={user.avatar ?? "/default-avatar.png"}
-          alt={user.username ?? "User Avatar"}
-          width={120}
-          height={120}
-          className={css.avatar}
-          priority
-        />
-
-        <form className={css.profileInfo} action={handleSubmit}>
+        <form
+          className={css.profileInfo}
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSubmit();
+          }}
+        >
           <div className={css.usernameWrapper}>
             <label htmlFor="username">Username:</label>
             <input
@@ -74,7 +64,7 @@ export default function ProfileEditPage() {
             />
           </div>
 
-          <p>Email: {user.email}</p>
+          <p>Email: {user!.email}</p>
 
           {error && <p className={css.error}>{error}</p>}
 

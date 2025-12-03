@@ -6,6 +6,7 @@ import AuthProvider from "@/components/AuthProvider/AuthProvider";
 import { getServerMe } from "@/lib/api/serverApi";
 import { Roboto } from "next/font/google";
 import type { Metadata } from "next";
+import AuthInitializer from "@/components/AuthInitilizer/AuthInitilizer";
 
 const roboto = Roboto({
   subsets: ["latin"],
@@ -48,6 +49,7 @@ export default async function RootLayout({
       <body className={roboto.variable}>
         <TanStackProvider>
           <AuthProvider>
+            <AuthInitializer />
             <Header />
             <main>
               {children}
